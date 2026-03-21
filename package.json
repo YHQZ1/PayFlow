@@ -1,0 +1,21 @@
+{
+  "name": "payflow",
+  "version": "1.0.0",
+  "description": "> A production-grade, multi-tenant payment processing platform built with Node.js microservices, Kafka event streaming, Kubernetes on AWS, and a full developer portal — inspired by Stripe's architecture.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YHQZ1/PayFlow.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/YHQZ1/PayFlow/issues"
+  },
+  "homepage": "https://github.com/YHQZ1/PayFlow#readme"
+}
