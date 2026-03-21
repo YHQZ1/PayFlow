@@ -1,20 +1,13 @@
-import { v4 as uuidv4 } from "uuid";
+import { db } from "../db/index.js";
+import { tenants } from "../db/schema.js";
+import { eq } from "drizzle-orm";
 
-const tenants = new Map();
-
-export const createTenant = ({ name, email }) => {
-  const id = uuidv4();
-  const tenant = {
-    id,
-    name,
-    email,
-    status: "active",
-    createdAt: new Date().toISOString(),
-  };
-  tenants.set(id, tenant);
+export const createTenant = async ({ name, email }) => {
+  const [tenant] = await db.insert(tenants).values({ name, email }).returning();
   return tenant;
 };
 
-export const getTenant = (id) => {
-  return tenants.get(id) || null;
+export const getTenant = async (id) => {
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id));
+  return tenant || null;
 };
