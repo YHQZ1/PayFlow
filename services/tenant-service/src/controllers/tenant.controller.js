@@ -73,6 +73,20 @@ export const revokeKey = async (req, res) => {
   }
 };
 
+export const validateKey = async (req, res) => {
+  try {
+    const { rawKey } = req.body;
+    if (!rawKey) return res.status(400).json({ error: "rawKey is required" });
+
+    const result = await tenantService.validateApiKey(rawKey);
+    if (!result) return res.status(401).json({ error: "invalid key" });
+
+    res.json(result);
+  } catch {
+    res.status(500).json({ error: "internal server error" });
+  }
+};
+
 // ─── Webhooks ────────────────────────────────────────────────
 
 export const addWebhook = async (req, res) => {

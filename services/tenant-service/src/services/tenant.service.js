@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { tenants, apiKeys, webhookEndpoints } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 
@@ -49,6 +49,17 @@ export const revokeApiKey = async (tenantId, keyId) => {
     .where(eq(apiKeys.id, keyId) && eq(apiKeys.tenantId, tenantId))
     .returning();
   return key || null;
+};
+
+export const validateApiKey = async (rawKey) => {
+  const keys = await db.select().from(apiKeys).where(isNull(apiKeys.revokedAt));
+
+  for (const key of keys) {
+    const match = await bcrypt.compare(rawKey, key.keyHash);
+    if (match) return { tenantId: key.tenantId };
+  }
+
+  return null;
 };
 
 // ─── Webhooks ────────────────────────────────────────────────

@@ -11,6 +11,7 @@ router.get("/:id", controller.getById);
 router.post("/:id/keys", controller.generateKey);
 router.get("/:id/keys", controller.listKeys);
 router.delete("/:id/keys/:keyId", controller.revokeKey);
+router.post('/keys/validate', controller.validateKey)
 
 // Webhooks
 router.post("/:id/webhooks", controller.addWebhook);
