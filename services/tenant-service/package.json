@@ -1,0 +1,16 @@
+{
+  "name": "@payflow/tenant-service",
+  "version": "1.0.0",
+  "description": "Tenant management service for PayFlow",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "uuid": "^13.0.0",
+    "zod": "^4.3.6"
+  }
+}
