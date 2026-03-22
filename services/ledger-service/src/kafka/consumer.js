@@ -9,7 +9,10 @@ const kafka = new Kafka({
   brokers: process.env.KAFKA_BROKERS.split(","),
 });
 
-const consumer = kafka.consumer({ groupId: process.env.KAFKA_GROUP_ID });
+const consumer = kafka.consumer({
+  groupId: process.env.KAFKA_GROUP_ID,
+  allowAutoTopicCreation: true,
+});
 
 const writeJournalEntries = async ({
   paymentId,
