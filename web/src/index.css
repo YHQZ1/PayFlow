@@ -1,1 +1,78 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap");
 @import "tailwindcss";
+
+@theme {
+  --color-brand-navy: #1a1f5e;
+  --color-brand-navy-light: #252b7a;
+  --color-slate-900: #0f172a;
+  --color-slate-600: #475569;
+  --color-slate-50: #f8fafc;
+
+  --font-display: "Instrument Serif", "Georgia", "serif";
+  --font-sans: "DM Sans", "system-ui", "sans-serif";
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    @apply antialiased bg-white text-slate-900 selection:bg-brand-navy selection:text-white;
+    font-family: "DM Sans", system-ui, sans-serif;
+    line-height: 1.5;
+  }
+}
+
+@layer utilities {
+  .display-text {
+    font-family: "Instrument Serif", Georgia, serif;
+    letter-spacing: -0.02em;
+    line-height: 0.9;
+  }
+
+  .hero-text {
+    font-family: "Instrument Serif", Georgia, serif;
+    letter-spacing: -0.03em;
+    line-height: 0.88;
+  }
+
+  .bento-card {
+    @apply bg-white border border-slate-100 p-10 transition-all duration-500 hover:border-slate-300 hover:shadow-[0_20px_60px_-20px_rgba(26,31,94,0.10)];
+  }
+
+  .bento-card-dark {
+    @apply bg-slate-900 p-10 transition-all duration-500;
+  }
+
+  .label-text {
+    font-family: "DM Sans", system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .nav-link {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    @apply text-slate-500 hover:text-brand-navy transition-colors;
+  }
+
+  /* Subtle dot grid */
+  .dot-grid {
+    background-image: radial-gradient(circle, #dde3ed 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+
+  /* Fine line grid */
+  .line-grid {
+    background-image:
+      linear-gradient(to right, #f1f5f9 1px, transparent 1px),
+      linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
+    background-size: 36px 36px;
+  }
+}
