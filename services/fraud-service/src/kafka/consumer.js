@@ -1,6 +1,7 @@
 import { Kafka } from "kafkajs";
 import { runRules } from "../rules/engine.js";
 import { publishFraudAlert } from "./producer.js";
+import { logger } from "../logger.js";
 import "dotenv/config";
 
 const kafka = new Kafka({
@@ -23,8 +24,9 @@ export const startConsumer = async () => {
       const result = await runRules({ tenantId, amount, status });
 
       if (result.flagged) {
-        console.log(
-          `fraud flagged — payment ${paymentId} score ${result.score} flags: ${result.flags.join(", ")}`,
+        logger.warn(
+          { paymentId, tenantId, score: result.score, flags: result.flags },
+          "payment flagged for fraud",
         );
         await publishFraudAlert({
           tenantId,
@@ -33,10 +35,13 @@ export const startConsumer = async () => {
           flags: result.flags,
         });
       } else {
-        console.log(`payment ${paymentId} cleared — score ${result.score}`);
+        logger.info(
+          { paymentId, score: result.score },
+          "payment cleared by fraud engine",
+        );
       }
     },
   });
 
-  console.log("fraud-service consumer started — listening on payment.created");
+  logger.info("fraud-service consumer started");
 };

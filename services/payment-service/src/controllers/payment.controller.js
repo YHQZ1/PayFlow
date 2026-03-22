@@ -1,61 +1,70 @@
 import * as paymentService from "../services/payment.service.js";
 import { checkIdempotency, saveIdempotency } from "../utils/idempotency.js";
+import { NotFoundError, ValidationError } from "../errors.js";
+import { listPaymentsQuerySchema } from "../middleware/validate.middleware.js";
 
-export const create = async (req, res) => {
+export const health = async (req, res) => {
+  const result = await paymentService.checkHealth();
+  res.status(result.status === "ok" ? 200 : 503).json(result);
+};
+
+export const create = async (req, res, next) => {
   try {
     const idempotencyKey = req.headers["idempotency-key"];
     if (!idempotencyKey) {
-      return res
-        .status(400)
-        .json({ error: "idempotency-key header is required" });
+      return next(new ValidationError("idempotency-key header is required"));
     }
 
     const cached = await checkIdempotency(`${req.tenantId}:${idempotencyKey}`);
     if (cached) return res.status(200).json({ ...cached, idempotent: true });
 
-    const { amount, currency = "INR", description } = req.body;
-    if (!amount || amount <= 0) {
-      return res
-        .status(400)
-        .json({ error: "amount must be a positive integer" });
-    }
-
     const payment = await paymentService.createPayment({
       tenantId: req.tenantId,
-      amount,
-      currency,
-      description,
       idempotencyKey,
+      ...req.body,
     });
 
     await saveIdempotency(`${req.tenantId}:${idempotencyKey}`, payment);
     res.status(201).json(payment);
-  } catch (error) {
-    if (error.message?.includes("unique constraint")) {
-      return res.status(409).json({ error: "duplicate idempotency key" });
-    }
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getById = async (req, res) => {
+export const getById = async (req, res, next) => {
   try {
     const payment = await paymentService.getPayment(
       req.params.id,
       req.tenantId,
     );
-    if (!payment) return res.status(404).json({ error: "payment not found" });
+    if (!payment) return next(new NotFoundError("payment"));
     res.json(payment);
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const list = async (req, res) => {
+export const list = async (req, res, next) => {
   try {
-    const result = await paymentService.listPayments(req.tenantId);
+    const parsed = listPaymentsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      const details = (parsed.error.issues ?? parsed.error.errors ?? []).map(
+        (e) => ({
+          field: e.path.join("."),
+          message: e.message,
+        }),
+      );
+      return next(new ValidationError("invalid query parameters", details));
+    }
+    const { status, limit, offset } = parsed.data;
+    const result = await paymentService.listPayments({
+      tenantId: req.tenantId,
+      status,
+      limit,
+      offset,
+    });
     res.json(result);
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };

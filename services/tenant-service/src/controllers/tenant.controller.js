@@ -1,43 +1,69 @@
 import * as tenantService from "../services/tenant.service.js";
+import { NotFoundError } from "../errors.js";
 
-// ─── Tenants ────────────────────────────────────────────────
+// ─── Health ───────────────────────────────────────────────────
 
-export const create = async (req, res) => {
+export const health = async (req, res) => {
+  const result = await tenantService.checkHealth();
+  res.status(result.status === "ok" ? 200 : 503).json(result);
+};
+
+// ─── Tenants ──────────────────────────────────────────────────
+
+export const list = async (req, res, next) => {
   try {
-    const { name, email } = req.body;
-    if (!name || !email) {
-      return res.status(400).json({ error: "name and email are required" });
-    }
-    const tenant = await tenantService.createTenant({ name, email });
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = parseInt(req.query.offset) || 0;
+    const rows = await tenantService.listTenants({ limit, offset });
+    res.json({ data: rows, limit, offset });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const create = async (req, res, next) => {
+  try {
+    const tenant = await tenantService.createTenant(req.body);
     res.status(201).json(tenant);
-  } catch (error) {
-    if (
-      error.message?.includes("unique constraint") ||
-      error.cause?.code === "23505"
-    ) {
-      return res.status(409).json({ error: "email already exists" });
-    }
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getById = async (req, res) => {
+export const getById = async (req, res, next) => {
   try {
     const tenant = await tenantService.getTenant(req.params.id);
-    if (!tenant) return res.status(404).json({ error: "tenant not found" });
+    if (!tenant) return next(new NotFoundError("tenant"));
     res.json(tenant);
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };
 
-// ─── API Keys ────────────────────────────────────────────────
+export const update = async (req, res, next) => {
+  try {
+    const tenant = await tenantService.updateTenant(req.params.id, req.body);
+    res.json(tenant);
+  } catch (err) {
+    next(err);
+  }
+};
 
-export const generateKey = async (req, res) => {
+export const remove = async (req, res, next) => {
+  try {
+    await tenantService.deleteTenant(req.params.id);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── API Keys ─────────────────────────────────────────────────
+
+export const generateKey = async (req, res, next) => {
   try {
     const tenant = await tenantService.getTenant(req.params.id);
-    if (!tenant) return res.status(404).json({ error: "tenant not found" });
-
+    if (!tenant) return next(new NotFoundError("tenant"));
     const apiKey = await tenantService.generateApiKey(req.params.id);
     res.status(201).json({
       id: apiKey.id,
@@ -46,82 +72,77 @@ export const generateKey = async (req, res) => {
       createdAt: apiKey.createdAt,
       message: "Store this key safely — it will never be shown again",
     });
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const listKeys = async (req, res) => {
+export const listKeys = async (req, res, next) => {
   try {
     const keys = await tenantService.listApiKeys(req.params.id);
     res.json(keys);
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const revokeKey = async (req, res) => {
+export const revokeKey = async (req, res, next) => {
   try {
     const key = await tenantService.revokeApiKey(
       req.params.id,
       req.params.keyId,
     );
-    if (!key) return res.status(404).json({ error: "key not found" });
-    res.json({ message: "key revoked", key });
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+    if (!key) return next(new NotFoundError("api key"));
+    res.json({ message: "key revoked", id: key.id, revokedAt: key.revokedAt });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const validateKey = async (req, res) => {
+export const validateKey = async (req, res, next) => {
   try {
-    const { rawKey } = req.body;
-    if (!rawKey) return res.status(400).json({ error: "rawKey is required" });
-
-    const result = await tenantService.validateApiKey(rawKey);
-    if (!result) return res.status(401).json({ error: "invalid key" });
-
+    const result = await tenantService.validateApiKey(req.body.rawKey);
+    if (!result)
+      return res
+        .status(401)
+        .json({ error: "invalid api key", code: "UNAUTHORIZED" });
     res.json(result);
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };
 
-// ─── Webhooks ────────────────────────────────────────────────
+// ─── Webhooks ─────────────────────────────────────────────────
 
-export const addWebhook = async (req, res) => {
+export const addWebhook = async (req, res, next) => {
   try {
-    const { url } = req.body;
-    if (!url) return res.status(400).json({ error: "url is required" });
-
     const tenant = await tenantService.getTenant(req.params.id);
-    if (!tenant) return res.status(404).json({ error: "tenant not found" });
-
-    const webhook = await tenantService.addWebhook(req.params.id, url);
+    if (!tenant) return next(new NotFoundError("tenant"));
+    const webhook = await tenantService.addWebhook(req.params.id, req.body.url);
     res.status(201).json(webhook);
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const listWebhooks = async (req, res) => {
+export const listWebhooks = async (req, res, next) => {
   try {
     const webhooks = await tenantService.listWebhooks(req.params.id);
     res.json(webhooks);
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const removeWebhook = async (req, res) => {
+export const removeWebhook = async (req, res, next) => {
   try {
     const webhook = await tenantService.removeWebhook(
       req.params.id,
       req.params.webhookId,
     );
-    if (!webhook) return res.status(404).json({ error: "webhook not found" });
-    res.json({ message: "webhook removed" });
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+    if (!webhook) return next(new NotFoundError("webhook"));
+    res.status(204).send();
+  } catch (err) {
+    next(err);
   }
 };

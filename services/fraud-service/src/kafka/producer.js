@@ -1,4 +1,5 @@
 import { Kafka } from "kafkajs";
+import { logger } from "../logger.js";
 import "dotenv/config";
 
 const kafka = new Kafka({
@@ -10,7 +11,7 @@ const producer = kafka.producer();
 
 export const connectProducer = async () => {
   await producer.connect();
-  console.log("fraud-service producer connected");
+  logger.info("fraud-service producer connected");
 };
 
 export const publishFraudAlert = async ({
@@ -36,7 +37,5 @@ export const publishFraudAlert = async ({
       },
     ],
   });
-  console.log(
-    `fraud alert published for payment ${paymentId} — score ${score}`,
-  );
+  logger.warn({ paymentId, tenantId, score }, "fraud alert published");
 };

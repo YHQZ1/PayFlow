@@ -1,11 +1,11 @@
-import bcrypt from "bcrypt";
+import { UnauthorizedError } from "../errors.js";
 import "dotenv/config";
 
 export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "missing api key" });
+      return next(new UnauthorizedError("missing api key"));
     }
 
     const rawKey = authHeader.split(" ")[1];
@@ -20,13 +20,13 @@ export const authenticate = async (req, res, next) => {
     );
 
     if (!response.ok) {
-      return res.status(401).json({ error: "invalid api key" });
+      return next(new UnauthorizedError("invalid api key"));
     }
 
     const { tenantId } = await response.json();
     req.tenantId = tenantId;
     next();
-  } catch {
-    res.status(500).json({ error: "internal server error" });
+  } catch (err) {
+    next(err);
   }
 };

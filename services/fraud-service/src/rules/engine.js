@@ -1,12 +1,10 @@
-import Redis from "ioredis";
-import "dotenv/config";
-
-const redis = new Redis(process.env.REDIS_URL);
+import { redis } from "../services/fraud.service.js";
+import { logger } from "../logger.js";
 
 const RULES = {
-  VELOCITY: { score: 60, label: "high velocity" },
-  LARGE_AMOUNT: { score: 40, label: "unusually large amount" },
-  REPEATED_FAILURE: { score: 70, label: "repeated failures" },
+  VELOCITY: { score: 60, label: "high_velocity" },
+  LARGE_AMOUNT: { score: 40, label: "large_amount" },
+  REPEATED_FAILURE: { score: 70, label: "repeated_failures" },
 };
 
 const checkVelocity = async (tenantId) => {
@@ -16,9 +14,7 @@ const checkVelocity = async (tenantId) => {
   return count > 5;
 };
 
-const checkLargeAmount = (amount) => {
-  return amount > 10000000;
-};
+const checkLargeAmount = (amount) => amount > 10_000_000;
 
 const checkRepeatedFailure = async (tenantId, status) => {
   if (status !== "failed") return false;
@@ -32,24 +28,28 @@ export const runRules = async ({ tenantId, amount, status }) => {
   const flags = [];
   let totalScore = 0;
 
-  if (await checkVelocity(tenantId)) {
-    flags.push(RULES.VELOCITY);
+  const [velocityHit, failureHit] = await Promise.all([
+    checkVelocity(tenantId),
+    checkRepeatedFailure(tenantId, status),
+  ]);
+
+  if (velocityHit) {
+    flags.push(RULES.VELOCITY.label);
     totalScore += RULES.VELOCITY.score;
   }
-
   if (checkLargeAmount(amount)) {
-    flags.push(RULES.LARGE_AMOUNT);
+    flags.push(RULES.LARGE_AMOUNT.label);
     totalScore += RULES.LARGE_AMOUNT.score;
   }
-
-  if (await checkRepeatedFailure(tenantId, status)) {
-    flags.push(RULES.REPEATED_FAILURE);
+  if (failureHit) {
+    flags.push(RULES.REPEATED_FAILURE.label);
     totalScore += RULES.REPEATED_FAILURE.score;
   }
 
-  return {
-    flagged: totalScore >= 50,
-    score: totalScore,
-    flags: flags.map((f) => f.label),
-  };
+  logger.debug(
+    { tenantId, amount, status, totalScore, flags },
+    "fraud rules evaluated",
+  );
+
+  return { flagged: totalScore >= 50, score: totalScore, flags };
 };

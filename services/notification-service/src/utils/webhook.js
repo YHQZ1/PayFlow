@@ -1,3 +1,5 @@
+import { logger } from "../logger.js";
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const deliverWebhook = async (url, payload, maxRetries = 3) => {
@@ -13,25 +15,32 @@ export const deliverWebhook = async (url, payload, maxRetries = 3) => {
       });
 
       if (response.ok) {
-        console.log(`webhook delivered to ${url} — status ${response.status}`);
+        logger.info(
+          { url, status: response.status, attempt: attempt + 1 },
+          "webhook delivered",
+        );
         return { success: true, status: response.status };
       }
 
-      console.log(
-        `webhook attempt ${attempt + 1} failed — status ${response.status}`,
+      logger.warn(
+        { url, status: response.status, attempt: attempt + 1 },
+        "webhook attempt failed",
       );
-    } catch (error) {
-      console.log(`webhook attempt ${attempt + 1} error — ${error.message}`);
+    } catch (err) {
+      logger.warn(
+        { url, err: err.message, attempt: attempt + 1 },
+        "webhook attempt errored",
+      );
     }
 
     attempt++;
     if (attempt < maxRetries) {
       const delay = Math.pow(2, attempt) * 1000;
-      console.log(`retrying in ${delay}ms...`);
+      logger.info({ url, delay, nextAttempt: attempt + 1 }, "retrying webhook");
       await sleep(delay);
     }
   }
 
-  console.log(`webhook failed after ${maxRetries} attempts — ${url}`);
+  logger.error({ url, maxRetries }, "webhook failed permanently");
   return { success: false };
 };
