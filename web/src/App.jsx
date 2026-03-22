@@ -1,9 +1,12 @@
-import PayFlow from "./pages/Landing";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import PayFlow from "./pages/PayFlow";
 
-function App() {
+export default function App() {
   return (
-    <PayFlow />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<PayFlow />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
