@@ -59,7 +59,10 @@ const writeJournalEntries = async ({
 
 export const startConsumer = async () => {
   await consumer.connect();
-  await consumer.subscribe({ topic: "payment.created", fromBeginning: true });
+  await consumer.subscribe({
+    topics: ["payment.created", "payment.failed"],
+    fromBeginning: true,
+  });
 
   await consumer.run({
     eachMessage: async ({ message }) => {

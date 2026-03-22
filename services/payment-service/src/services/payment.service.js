@@ -36,21 +36,25 @@ export const createPayment = async ({
     .where(eq(payments.id, payment.id))
     .returning();
 
-  await publishEvent("payment.created", {
-    eventId: uuidv4(),
-    eventType: "payment.created",
-    tenantId,
-    payload: {
-      paymentId: updated.id,
-      amount,
-      currency,
-      status: providerStatus,
+  await publishEvent(
+    providerStatus === "succeeded" ? "payment.created" : "payment.failed",
+    {
+      eventId: uuidv4(),
+      eventType:
+        providerStatus === "succeeded" ? "payment.created" : "payment.failed",
+      tenantId,
+      payload: {
+        paymentId: updated.id,
+        amount,
+        currency,
+        status: providerStatus,
+      },
+      metadata: {
+        producedAt: new Date().toISOString(),
+        producer: "payment-service",
+      },
     },
-    metadata: {
-      producedAt: new Date().toISOString(),
-      producer: "payment-service",
-    },
-  });
+  );
 
   return updated;
 };
