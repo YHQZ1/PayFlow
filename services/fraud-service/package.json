@@ -1,0 +1,16 @@
+{
+  "name": "@payflow/fraud-service",
+  "version": "1.0.0",
+  "description": "Fraud detection service for PayFlow",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "ioredis": "^5.10.1",
+    "kafkajs": "^2.2.4"
+  }
+}
