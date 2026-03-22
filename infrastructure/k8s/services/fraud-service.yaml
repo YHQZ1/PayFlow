@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud-service
+  namespace: payflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fraud-service
+  template:
+    metadata:
+      labels:
+        app: fraud-service
+    spec:
+      containers:
+        - name: fraud-service
+          image: payflow/fraud-service:latest
+          imagePullPolicy: Never
+          env:
+            - name: KAFKA_BROKERS
+              value: kafka:9092
+            - name: KAFKA_GROUP_ID
+              value: fraud-service-cg
+            - name: REDIS_URL
+              value: redis://redis:6379
+            - name: NODE_ENV
+              value: production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fraud-service
+  namespace: payflow
+spec:
+  selector:
+    app: fraud-service
+  ports:
+    - port: 3004
+      targetPort: 3004

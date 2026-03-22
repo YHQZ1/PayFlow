@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ledger-service
+  namespace: payflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ledger-service
+  template:
+    metadata:
+      labels:
+        app: ledger-service
+    spec:
+      containers:
+        - name: ledger-service
+          image: payflow/ledger-service:latest
+          imagePullPolicy: Never
+          env:
+            - name: DATABASE_URL
+              value: postgresql://payflow:payflow@postgres:5432/payflow_ledger
+            - name: KAFKA_BROKERS
+              value: kafka:9092
+            - name: KAFKA_GROUP_ID
+              value: ledger-service-cg
+            - name: NODE_ENV
+              value: production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ledger-service
+  namespace: payflow
+spec:
+  selector:
+    app: ledger-service
+  ports:
+    - port: 3001
+      targetPort: 3001

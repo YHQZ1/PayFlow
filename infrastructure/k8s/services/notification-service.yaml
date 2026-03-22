@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: payflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: payflow/notification-service:latest
+          imagePullPolicy: Never
+          env:
+            - name: KAFKA_BROKERS
+              value: kafka:9092
+            - name: KAFKA_GROUP_ID
+              value: notification-service-cg
+            - name: TENANT_SERVICE_URL
+              value: http://tenant-service:3003
+            - name: NODE_ENV
+              value: production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: payflow
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - port: 3002
+      targetPort: 3002
