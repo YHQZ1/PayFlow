@@ -1,0 +1,190 @@
+openapi: 3.0.3
+info:
+  title: Ledger Service
+  description: Double-entry accounting ledger — records all money movement with journal entries and running balances
+  version: 1.0.0
+servers:
+  - url: http://localhost:3001
+    description: Local development
+  - url: http://localhost:4000
+    description: Via API Gateway
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Health
+  - name: Balances
+  - name: Journal
+
+paths:
+  /ledger/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /ledger/balances/{tenantId}:
+    get:
+      tags: [Balances]
+      summary: Get running balance for a tenant
+      parameters:
+        - $ref: "#/components/parameters/tenantId"
+      responses:
+        "200":
+          description: Current balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Balance"
+
+  /ledger/journal/{tenantId}:
+    get:
+      tags: [Journal]
+      summary: List journal entries for a tenant
+      parameters:
+        - $ref: "#/components/parameters/tenantId"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Paginated journal entries
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/JournalEntry"
+
+  /ledger/journal/{tenantId}/payment/{paymentId}:
+    get:
+      tags: [Journal]
+      summary: Get journal entries for a specific payment
+      description: Returns the debit and credit pair for a single payment
+      parameters:
+        - $ref: "#/components/parameters/tenantId"
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Journal entries for the payment
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JournalEntry"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    tenantId:
+      name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        maximum: 100
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+
+  schemas:
+    Balance:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+          description: Balance in smallest currency unit
+        currency:
+          type: string
+          example: INR
+        updatedAt:
+          type: string
+          format: date-time
+
+    JournalEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        paymentId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        entryType:
+          type: string
+          enum: [debit, credit]
+        account:
+          type: string
+          enum: [accounts_receivable, revenue]
+        amount:
+          type: integer
+        currency:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        limit:
+          type: integer
+        offset:
+          type: integer

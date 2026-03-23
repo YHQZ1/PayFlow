@@ -1,0 +1,123 @@
+openapi: 3.0.3
+info:
+  title: Fraud Service
+  description: Real-time fraud detection and risk scoring engine
+  version: 1.0.0
+servers:
+  - url: http://localhost:3002
+    description: Local development
+  - url: http://localhost:4000
+    description: Via API Gateway
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Health
+  - name: Risk
+
+paths:
+  /fraud/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /fraud/risk/{tenantId}:
+    get:
+      tags: [Risk]
+      summary: Get current risk score for a tenant
+      description: Returns the current velocity counters and computed risk score based on recent payment activity
+      parameters:
+        - $ref: "#/components/parameters/tenantId"
+      responses:
+        "200":
+          description: Risk score
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskScore"
+    delete:
+      tags: [Risk]
+      summary: Reset fraud counters for a tenant
+      description: Manually clears velocity and failure counters — use for ops/support purposes
+      parameters:
+        - $ref: "#/components/parameters/tenantId"
+      responses:
+        "200":
+          description: Counters reset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  tenantId:
+                    type: string
+                    format: uuid
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    tenantId:
+      name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    RiskScore:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        score:
+          type: integer
+          description: Cumulative risk score (0-200+)
+          example: 60
+        risk:
+          type: string
+          enum: [low, medium, high, critical]
+        counters:
+          type: object
+          properties:
+            velocity:
+              type: integer
+              description: Number of payments in the last 60 seconds
+            failures:
+              type: integer
+              description: Number of failed payments in the last 5 minutes
+        timestamp:
+          type: string
+          format: date-time
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          additionalProperties:
+            type: string

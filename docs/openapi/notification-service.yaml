@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: Notification Service
+  description: Webhook delivery service — listens to Kafka events and delivers them to tenant-registered endpoints with retry and dead letter queue
+  version: 1.0.0
+servers:
+  - url: http://localhost:3007
+    description: Local development
+
+tags:
+  - name: Health
+
+paths:
+  /notifications/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: |
+        Returns the health of the notification service Kafka consumer.
+        This service has no public-facing API endpoints — it operates entirely through
+        Kafka event consumption. Webhooks are delivered automatically on `payment.created` events.
+      responses:
+        "200":
+          description: Consumer is running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          properties:
+            consumer:
+              type: string
+              enum: [ok, error]
+
+x-kafka-events:
+  consumed:
+    - topic: payment.created
+      description: Triggers webhook delivery to all active tenant webhook endpoints
+      retries: 3
+      backoff: exponential (2s, 4s)
+      dlq: webhook.dlq
+  produced:
+    - topic: webhook.dlq
+      description: Published when all delivery attempts for a webhook fail

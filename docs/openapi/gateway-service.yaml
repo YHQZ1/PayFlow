@@ -1,0 +1,256 @@
+openapi: 3.0.3
+info:
+  title: Gateway Service
+  description: External payment provider abstraction — normalises Stripe API responses into PayFlow's internal format
+  version: 1.0.0
+servers:
+  - url: http://localhost:3004
+    description: Local development
+
+tags:
+  - name: Health
+  - name: Charges
+  - name: Refunds
+
+paths:
+  /gateway/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /gateway/charge:
+    post:
+      tags: [Charges]
+      summary: Create a charge via Stripe
+      description: Internal endpoint — called by payment-service. Creates a charge via the configured provider and returns a normalised response.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChargeRequest"
+      responses:
+        "201":
+          description: Charge created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Charge"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "502":
+          description: Provider declined the charge
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GatewayError"
+
+  /gateway/charges:
+    get:
+      tags: [Charges]
+      summary: List all charges
+      description: Returns all charges from the in-memory provider store — used by reconciliation-service
+      responses:
+        "200":
+          description: List of charges
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Charge"
+
+  /gateway/charge/{providerRef}:
+    get:
+      tags: [Charges]
+      summary: Get a charge by provider reference
+      parameters:
+        - name: providerRef
+          in: path
+          required: true
+          schema:
+            type: string
+          example: ch_abc123...
+      responses:
+        "200":
+          description: Charge found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Charge"
+        "502":
+          description: Charge not found in provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GatewayError"
+
+  /gateway/refund:
+    post:
+      tags: [Refunds]
+      summary: Create a refund
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRefundRequest"
+      responses:
+        "200":
+          description: Refund created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Refund"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "502":
+          description: Provider error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GatewayError"
+
+components:
+  responses:
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    CreateChargeRequest:
+      type: object
+      required: [amount, paymentId, tenantId]
+      properties:
+        amount:
+          type: integer
+          example: 50000
+        currency:
+          type: string
+          default: INR
+        paymentId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        description:
+          type: string
+
+    Charge:
+      type: object
+      properties:
+        providerRef:
+          type: string
+          example: ch_abc123...
+        provider:
+          type: string
+          example: stripe
+        status:
+          type: string
+          enum: [succeeded, failed]
+        amount:
+          type: integer
+        currency:
+          type: string
+        paid:
+          type: boolean
+        failureCode:
+          type: string
+          nullable: true
+        failureMessage:
+          type: string
+          nullable: true
+        balanceTransaction:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateRefundRequest:
+      type: object
+      required: [providerRef, amount]
+      properties:
+        providerRef:
+          type: string
+          example: ch_abc123...
+        amount:
+          type: integer
+        reason:
+          type: string
+          default: requested_by_customer
+
+    Refund:
+      type: object
+      properties:
+        providerRef:
+          type: string
+        chargeRef:
+          type: string
+        provider:
+          type: string
+        status:
+          type: string
+        amount:
+          type: integer
+        currency:
+          type: string
+        reason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    GatewayError:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        providerCode:
+          type: string
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        service:
+          type: string
+        provider:
+          type: string
+        mode:
+          type: string
+          enum: [mock, live]
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string

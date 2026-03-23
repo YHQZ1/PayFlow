@@ -1,0 +1,274 @@
+openapi: 3.0.3
+info:
+  title: Payment Service
+  description: Accepts and processes payments through the PayFlow platform
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: http://localhost:4000
+    description: Via API Gateway
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Health
+  - name: Payments
+
+paths:
+  /payments/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /payments:
+    post:
+      tags: [Payments]
+      summary: Create a payment
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique key to safely retry — same key always returns same result
+          schema:
+            type: string
+          example: order-1042
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequest"
+      responses:
+        "201":
+          description: Payment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "200":
+          description: Idempotent response — payment already exists for this key
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Payment"
+                  - type: object
+                    properties:
+                      idempotent:
+                        type: boolean
+                        example: true
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+    get:
+      tags: [Payments]
+      summary: List payments
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, succeeded, failed]
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Paginated list of payments
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Payment"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /payments/{id}:
+    get:
+      tags: [Payments]
+      summary: Get payment by ID
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          description: Payment found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: PayFlow API key (pk_live_...)
+
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        maximum: 100
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+
+  responses:
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationError"
+    NotFoundError:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        idempotencyKey:
+          type: string
+        amount:
+          type: integer
+          description: Amount in smallest currency unit (paise for INR)
+        currency:
+          type: string
+          example: INR
+        status:
+          type: string
+          enum: [pending, succeeded, failed]
+        description:
+          type: string
+          nullable: true
+        providerRef:
+          type: string
+          description: Reference ID from the payment gateway (ch_...)
+          nullable: true
+        metadata:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreatePaymentRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: integer
+          minimum: 1
+          maximum: 100000000
+          description: Amount in smallest currency unit (paise for INR)
+          example: 50000
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          default: INR
+          example: INR
+        description:
+          type: string
+          maxLength: 500
+        metadata:
+          type: object
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+
+    ValidationError:
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          properties:
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string

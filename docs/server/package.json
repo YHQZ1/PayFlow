@@ -1,0 +1,18 @@
+{
+  "name": "@payflow/docs",
+  "version": "1.0.0",
+  "description": "OpenAPI documentation server for PayFlow",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "js-yaml": "^4.1.0",
+    "swagger-ui-express": "^5.0.1"
+  }
+}

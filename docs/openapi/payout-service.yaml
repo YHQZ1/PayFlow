@@ -1,0 +1,240 @@
+openapi: 3.0.3
+info:
+  title: Payout Service
+  description: Manages money outflow — auto-settlement of succeeded payments and manual payout creation
+  version: 1.0.0
+servers:
+  - url: http://localhost:3005
+    description: Local development
+  - url: http://localhost:4000
+    description: Via API Gateway
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Health
+  - name: Payouts
+
+paths:
+  /payouts/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /payouts:
+    post:
+      tags: [Payouts]
+      summary: Create a payout
+      description: Manually trigger a payout. Payouts are also created automatically when a payment succeeds.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePayoutRequest"
+      responses:
+        "201":
+          description: Payout created and processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payout"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+    get:
+      tags: [Payouts]
+      summary: List payouts for a tenant
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processed, failed]
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Paginated list of payouts
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Payout"
+
+  /payouts/{id}:
+    get:
+      tags: [Payouts]
+      summary: Get payout by ID
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          description: Payout found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payout"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        maximum: 100
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+
+  responses:
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFoundError:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Payout:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+        currency:
+          type: string
+          example: INR
+        status:
+          type: string
+          enum: [pending, processed, failed]
+        providerRef:
+          type: string
+          nullable: true
+        failureCode:
+          type: string
+          nullable: true
+        failureMessage:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreatePayoutRequest:
+      type: object
+      required: [tenantId, amount]
+      properties:
+        tenantId:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+          minimum: 1
+          example: 50000
+        currency:
+          type: string
+          default: INR
+        description:
+          type: string
+        metadata:
+          type: object
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string

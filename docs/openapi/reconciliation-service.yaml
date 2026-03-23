@@ -1,0 +1,198 @@
+openapi: 3.0.3
+info:
+  title: Reconciliation Service
+  description: Verifies external correctness by comparing ledger records against gateway provider data
+  version: 1.0.0
+servers:
+  - url: http://localhost:3006
+    description: Local development
+  - url: http://localhost:4000
+    description: Via API Gateway
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Health
+  - name: Reconciliation
+
+paths:
+  /reconciliation/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /reconciliation/run:
+    post:
+      tags: [Reconciliation]
+      summary: Trigger a reconciliation run
+      description: |
+        Fetches journal entries from ledger-service and charges from gateway-service,
+        compares them, and returns any mismatches found. Each mismatch is also published
+        as a `reconciliation.mismatch` Kafka event.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenantId]
+              properties:
+                tenantId:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Reconciliation run completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconciliationRun"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /reconciliation/runs:
+    get:
+      tags: [Reconciliation]
+      summary: List all reconciliation runs
+      responses:
+        "200":
+          description: List of runs, most recent first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReconciliationRun"
+
+  /reconciliation/runs/{runId}/mismatches:
+    get:
+      tags: [Reconciliation]
+      summary: Get mismatches for a specific run
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Mismatches for the run
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Mismatch"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  responses:
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFoundError:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    ReconciliationRun:
+      type: object
+      properties:
+        runId:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [completed, failed]
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        summary:
+          type: object
+          properties:
+            ledgerEntries:
+              type: integer
+            gatewayCharges:
+              type: integer
+            mismatches:
+              type: integer
+        mismatches:
+          type: array
+          items:
+            $ref: "#/components/schemas/Mismatch"
+
+    Mismatch:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [MISSING_IN_GATEWAY, MISSING_IN_LEDGER, AMOUNT_MISMATCH, STATUS_MISMATCH]
+        paymentId:
+          type: string
+          format: uuid
+        ledgerAmount:
+          type: integer
+          nullable: true
+        gatewayAmount:
+          type: integer
+          nullable: true
+        description:
+          type: string
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string

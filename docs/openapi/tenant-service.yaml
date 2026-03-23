@@ -1,0 +1,453 @@
+openapi: 3.0.3
+info:
+  title: Tenant Service
+  description: Manages tenants, API keys, and webhook endpoints for PayFlow
+  version: 1.0.0
+  contact:
+    name: PayFlow
+servers:
+  - url: http://localhost:3003
+    description: Local development
+  - url: http://localhost:4000
+    description: Via API Gateway
+
+tags:
+  - name: Health
+  - name: Tenants
+  - name: API Keys
+  - name: Webhooks
+
+paths:
+  /tenants/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: Service degraded
+
+  /tenants:
+    get:
+      tags: [Tenants]
+      summary: List all tenants
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Paginated list of tenants
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Tenant"
+    post:
+      tags: [Tenants]
+      summary: Create a new tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTenantRequest"
+      responses:
+        "201":
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+  /tenants/{id}:
+    get:
+      tags: [Tenants]
+      summary: Get tenant by ID
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          description: Tenant found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    put:
+      tags: [Tenants]
+      summary: Update tenant
+      parameters:
+        - $ref: "#/components/parameters/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTenantRequest"
+      responses:
+        "200":
+          description: Tenant updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    delete:
+      tags: [Tenants]
+      summary: Delete tenant
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "204":
+          description: Tenant deleted
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /tenants/keys/validate:
+    post:
+      tags: [API Keys]
+      summary: Validate an API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rawKey]
+              properties:
+                rawKey:
+                  type: string
+                  example: pk_live_abc123...
+      responses:
+        "200":
+          description: Key is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                    format: uuid
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /tenants/{id}/keys:
+    post:
+      tags: [API Keys]
+      summary: Generate a new API key
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "201":
+          description: API key generated — store the rawKey, it will never be shown again
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyCreated"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    get:
+      tags: [API Keys]
+      summary: List API keys for tenant
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKey"
+
+  /tenants/{id}/keys/{keyId}:
+    delete:
+      tags: [API Keys]
+      summary: Revoke an API key
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Key revoked
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  /tenants/{id}/webhooks:
+    post:
+      tags: [Webhooks]
+      summary: Register a webhook endpoint
+      parameters:
+        - $ref: "#/components/parameters/id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: https://yourapp.com/webhooks/payflow
+      responses:
+        "201":
+          description: Webhook registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Webhook"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    get:
+      tags: [Webhooks]
+      summary: List webhook endpoints
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          description: List of webhooks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Webhook"
+
+  /tenants/{id}/webhooks/{webhookId}:
+    delete:
+      tags: [Webhooks]
+      summary: Remove a webhook endpoint
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - name: webhookId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Webhook removed
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+components:
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        maximum: 100
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+
+  responses:
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationError"
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ConflictError:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [active, suspended]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateTenantRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          example: Acme Corp
+        email:
+          type: string
+          format: email
+          example: admin@acme.com
+
+    UpdateTenantRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [active, suspended]
+
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        keyPrefix:
+          type: string
+          example: pk_live_ab12
+        createdAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ApiKeyCreated:
+      allOf:
+        - $ref: "#/components/schemas/ApiKey"
+        - type: object
+          properties:
+            rawKey:
+              type: string
+              example: pk_live_abc123...
+              description: Only shown once — store immediately
+            message:
+              type: string
+
+    Webhook:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+
+    ValidationError:
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          properties:
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
