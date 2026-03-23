@@ -8,10 +8,47 @@ import Redis from "ioredis";
 import "dotenv/config";
 
 const redis = new Redis(process.env.REDIS_URL);
-const MOCK_SUCCESS_RATE = parseFloat(process.env.MOCK_SUCCESS_RATE ?? "0.9");
 
-const mockPaymentProvider = () =>
-  Math.random() < MOCK_SUCCESS_RATE ? "succeeded" : "failed";
+const chargeViaGateway = async ({
+  amount,
+  currency,
+  paymentId,
+  tenantId,
+  description,
+}) => {
+  const response = await fetch(
+    `${process.env.GATEWAY_SERVICE_URL}/gateway/charge`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount,
+        currency,
+        paymentId,
+        tenantId,
+        description,
+      }),
+    },
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    return {
+      status: "failed",
+      providerRef: null,
+      failureCode: data.providerCode ?? "gateway_error",
+      failureMessage: data.error ?? "gateway request failed",
+    };
+  }
+
+  return {
+    status: data.status,
+    providerRef: data.providerRef,
+    failureCode: data.failureCode ?? null,
+    failureMessage: data.failureMessage ?? null,
+  };
+};
 
 export const checkHealth = async () => {
   const checks = {};
@@ -30,6 +67,17 @@ export const checkHealth = async () => {
     checks.redis = "ok";
   } catch {
     checks.redis = "error";
+    healthy = false;
+  }
+
+  try {
+    const res = await fetch(
+      `${process.env.GATEWAY_SERVICE_URL}/gateway/health`,
+    );
+    checks.gateway = res.ok ? "ok" : "error";
+    if (!res.ok) healthy = false;
+  } catch {
+    checks.gateway = "error";
     healthy = false;
   }
 
@@ -62,17 +110,26 @@ export const createPayment = async ({
     })
     .returning();
 
-  const providerStatus = mockPaymentProvider();
-  const providerRef = `mock_${uuidv4()}`;
+  const gatewayResult = await chargeViaGateway({
+    amount,
+    currency,
+    paymentId: payment.id,
+    tenantId,
+    description,
+  });
 
   const [updated] = await db
     .update(payments)
-    .set({ status: providerStatus, providerRef, updatedAt: new Date() })
+    .set({
+      status: gatewayResult.status,
+      providerRef: gatewayResult.providerRef,
+      updatedAt: new Date(),
+    })
     .where(eq(payments.id, payment.id))
     .returning();
 
   const topic =
-    providerStatus === "succeeded" ? "payment.created" : "payment.failed";
+    gatewayResult.status === "succeeded" ? "payment.created" : "payment.failed";
 
   await publishEvent(topic, {
     eventId: uuidv4(),
@@ -82,7 +139,9 @@ export const createPayment = async ({
       paymentId: updated.id,
       amount,
       currency,
-      status: providerStatus,
+      status: gatewayResult.status,
+      providerRef: gatewayResult.providerRef,
+      failureCode: gatewayResult.failureCode,
     },
     metadata: {
       producedAt: new Date().toISOString(),
@@ -91,8 +150,8 @@ export const createPayment = async ({
   });
 
   logger.info(
-    { paymentId: updated.id, tenantId, amount, status: providerStatus },
-    "payment processed",
+    { paymentId: updated.id, tenantId, amount, status: gatewayResult.status },
+    "payment processed via gateway",
   );
 
   return updated;
