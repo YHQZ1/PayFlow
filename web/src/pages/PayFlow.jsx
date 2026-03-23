@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 
 /* ─────────────────────────────────────────────────────────────────
-   TECH ICONS — simpleicons CDN URLs
+   TECH ICONS
 ───────────────────────────────────────────────────────────────── */
 const TECH_ICONS = [
   { name: "JavaScript", url: "https://cdn.simpleicons.org/javascript/F7DF1E" },
@@ -10,7 +10,7 @@ const TECH_ICONS = [
   { name: "Go", url: "https://cdn.simpleicons.org/go/00ADD8" },
   { name: "Python", url: "https://cdn.simpleicons.org/python/3776AB" },
   { name: "Ruby", url: "https://cdn.simpleicons.org/ruby/CC342D" },
-  { name: "Java", url: "https://cdn.simpleicons.org/openjdk/ED8B00" },
+  { name: "SpringBoot", url: "https://cdn.simpleicons.org/springboot/6DB33F" },
   { name: "Rust", url: "https://cdn.simpleicons.org/rust/000000" },
   { name: "PHP", url: "https://cdn.simpleicons.org/php/777BB4" },
   { name: "Node.js", url: "https://cdn.simpleicons.org/nodedotjs/339933" },
@@ -236,25 +236,25 @@ app.post(
 );`;
 
 /* ─────────────────────────────────────────────────────────────────
-   ARCHITECTURE DIAGRAM  (wider, bigger boxes so text fits)
+   ARCH DIAGRAM
 ───────────────────────────────────────────────────────────────── */
 function ArchDiagram() {
   const W = 1160,
-    H = 500; // Increased height for better spacing
+    H = 500;
   const N = {
-    app: [90, 225, 138, 68], // Adjusted Y positions
-    sdk: [280, 225, 138, 68],
-    alb: [470, 90, 144, 58], // More vertical spacing
-    gateway: [470, 225, 144, 68],
-    rcache: [470, 360, 144, 58],
-    payment: [666, 90, 144, 68],
-    ledger: [666, 225, 144, 68],
-    notify: [666, 360, 144, 68],
-    kafka: [864, 225, 148, 68],
-    fraud: [864, 90, 144, 58],
-    s3: [864, 360, 144, 58],
-    db: [1072, 142, 130, 58], // Adjusted for better alignment
-    provider: [1072, 298, 130, 58],
+    app: [90, 225, 138, 60],
+    sdk: [280, 225, 138, 60],
+    alb: [470, 90, 144, 52],
+    gateway: [470, 225, 144, 60],
+    rcache: [470, 360, 144, 52],
+    payment: [666, 90, 144, 60],
+    ledger: [666, 225, 144, 60],
+    notify: [666, 360, 144, 60],
+    kafka: [864, 225, 148, 60],
+    fraud: [864, 90, 144, 52],
+    s3: [864, 360, 144, 52],
+    db: [1072, 142, 130, 52],
+    provider: [1072, 298, 130, 52],
   };
   const labels = {
     app: ["Your App", "Web · Mobile · Server"],
@@ -280,12 +280,13 @@ function ArchDiagram() {
     payment: "accent",
     ledger: "accent",
     notify: "accent",
-    kafka: "hl",
+    kafka: "key",
     fraud: "plain",
     s3: "plain",
     db: "plain",
     provider: "plain",
   };
+
   const cx = (id) => N[id][0];
   const cy = (id) => N[id][1];
   const nw = (id) => N[id][2];
@@ -321,7 +322,7 @@ function ArchDiagram() {
       ly: 0,
     },
     {
-      d: `M ${rx("gateway")} ${cy("gateway") - 16} L ${lx("payment")} ${cy("payment")}`,
+      d: `M ${rx("gateway")} ${cy("gateway") - 14} L ${lx("payment")} ${cy("payment")}`,
       label: "",
       lx: 0,
       ly: 0,
@@ -333,16 +334,16 @@ function ArchDiagram() {
       ly: 0,
     },
     {
-      d: `M ${rx("gateway")} ${cy("gateway") + 16} L ${lx("notify")} ${cy("notify")}`,
+      d: `M ${rx("gateway")} ${cy("gateway") + 14} L ${lx("notify")} ${cy("notify")}`,
       label: "",
       lx: 0,
       ly: 0,
     },
     {
-      d: `M ${rx("payment")} ${cy("payment")} L ${lx("kafka")} ${cy("kafka") - 16}`,
+      d: `M ${rx("payment")} ${cy("payment")} L ${lx("kafka")} ${cy("kafka") - 14}`,
       label: "emit",
       lx: (rx("payment") + lx("kafka")) / 2 + 4,
-      ly: cy("payment") - 22,
+      ly: cy("payment") - 20,
     },
     {
       d: `M ${rx("ledger")} ${cy("ledger")} L ${lx("kafka")} ${cy("kafka")}`,
@@ -351,7 +352,7 @@ function ArchDiagram() {
       ly: cy("ledger") - 12,
     },
     {
-      d: `M ${rx("notify")} ${cy("notify")} L ${lx("kafka")} ${cy("kafka") + 16}`,
+      d: `M ${rx("notify")} ${cy("notify")} L ${lx("kafka")} ${cy("kafka") + 14}`,
       label: "",
       lx: 0,
       ly: 0,
@@ -411,11 +412,11 @@ function ArchDiagram() {
   ];
 
   const fillFor = (id) =>
-    ({ hl: "#1e1e4a", accent: "#f2f2fa", plain: "#fff" })[nodeStyle[id]];
+    ({ key: "#1e1e4a", accent: "#f2f2fb", plain: "#fff" })[nodeStyle[id]];
   const strokeFor = (id) =>
-    ({ hl: "#1e1e4a", accent: "#d0d0ec", plain: "#e0e0ec" })[nodeStyle[id]];
-  const tf = (id) => (nodeStyle[id] === "hl" ? "#fff" : "#1a1a2e");
-  const sf = (id) => (nodeStyle[id] === "hl" ? "#9090bc" : "#888");
+    ({ key: "#1e1e4a", accent: "#d8d8f0", plain: "#e2e2ee" })[nodeStyle[id]];
+  const tf = (id) => (nodeStyle[id] === "key" ? "#fff" : "#1a1a2e");
+  const sf = (id) => (nodeStyle[id] === "key" ? "#8080b8" : "#888");
 
   return (
     <div style={{ width: "100%", overflowX: "auto" }}>
@@ -454,7 +455,7 @@ function ArchDiagram() {
               cx={c * 60 + 14}
               cy={r * 46 + 14}
               r="1.1"
-              fill="#eeeeef"
+              fill="#ebebf0"
             />
           )),
         )}
@@ -462,8 +463,8 @@ function ArchDiagram() {
           <g key={i}>
             <path
               d={a.d}
-              stroke={a.dashed ? "#a0a0c4" : "#2d2d6b"}
-              strokeWidth={a.dashed ? 1.2 : 1.6}
+              stroke={a.dashed ? "#b0b0d0" : "#3a3a7a"}
+              strokeWidth={a.dashed ? 1.2 : 1.5}
               strokeDasharray={a.dashed ? "6,4" : "none"}
               fill="none"
               markerEnd={a.dashed ? "url(#ahd)" : "url(#ah)"}
@@ -474,7 +475,7 @@ function ArchDiagram() {
                 y={a.ly}
                 textAnchor="middle"
                 fontSize="10"
-                fontFamily="Inter,sans-serif"
+                fontFamily="'JetBrains Mono',monospace"
                 fontWeight="600"
                 fill={a.dashed ? "#9090bc" : "#5050a0"}
                 letterSpacing="0.01em"
@@ -494,14 +495,14 @@ function ArchDiagram() {
                 y={cy_ - h / 2}
                 width={w}
                 height={h}
-                rx="8"
+                rx="7"
                 fill={fillFor(id)}
                 stroke={strokeFor(id)}
-                strokeWidth="1.4"
+                strokeWidth="1.3"
               />
               <text
                 x={cx_}
-                y={cy_ - 8}
+                y={cy_ - 7}
                 textAnchor="middle"
                 fontSize="11"
                 fontWeight="600"
@@ -516,7 +517,7 @@ function ArchDiagram() {
                 y={cy_ + 9}
                 textAnchor="middle"
                 fontSize="9"
-                fontFamily="Inter,sans-serif"
+                fontFamily="'JetBrains Mono',monospace"
                 fill={sf(id)}
                 letterSpacing="0.01em"
               >
@@ -527,10 +528,10 @@ function ArchDiagram() {
         })}
         <g transform={`translate(14,${H - 48})`}>
           <rect
-            width="216"
+            width="220"
             height="44"
             rx="6"
-            fill="#f8f8fb"
+            fill="#f8f8fc"
             stroke="#e4e4ee"
             strokeWidth="1"
           />
@@ -539,8 +540,8 @@ function ArchDiagram() {
             y1="15"
             x2="36"
             y2="15"
-            stroke="#2d2d6b"
-            strokeWidth="1.6"
+            stroke="#3a3a7a"
+            strokeWidth="1.5"
             markerEnd="url(#ah)"
           />
           <text
@@ -627,54 +628,87 @@ function HeroVisual() {
       time: "31s ago",
     },
   ];
-  const dot = (s) =>
+  const dotColor = (s) =>
     ({
-      succeeded: "#39d353",
-      processed: "#39d353",
-      active: "#39d353",
-      pending: "#e6a817",
-      in_transit: "#6e9ef5",
-      past_due: "#d35339",
+      succeeded: "#16a34a",
+      processed: "#16a34a",
+      active: "#16a34a",
+      pending: "#d97706",
+      in_transit: "#2563eb",
+      past_due: "#dc2626",
     })[s] || "#aaa";
+
   return (
     <div
       style={{
-        border: "1px solid #e8e8f0",
-        borderRadius: 12,
+        border: "1px solid #e4e4ee",
+        borderRadius: 10,
         overflow: "hidden",
         background: "#fff",
-        boxShadow: "0 1px 20px rgba(45,45,107,0.05)",
+        boxShadow: "0 4px 32px rgba(30,30,74,0.07)",
       }}
     >
       <div
         style={{
           background: "#fafafa",
-          borderBottom: "1px solid #f0f0f0",
+          borderBottom: "1px solid #f0f0f6",
           padding: "11px 18px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#1a1a2e",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          Live transactions
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: "#ff5f57",
+              display: "inline-block",
+            }}
+          />
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: "#ffbd2e",
+              display: "inline-block",
+            }}
+          />
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: "#28c840",
+              display: "inline-block",
+            }}
+          />
+          <span
+            style={{
+              marginLeft: 10,
+              fontSize: 11,
+              color: "#1a1a2e",
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Live transactions
+          </span>
+        </div>
         <span
           style={{
             fontSize: 10,
-            fontWeight: 500,
-            color: "#39d353",
-            background: "#0d2b1a",
-            padding: "2px 8px",
+            fontWeight: 600,
+            color: "#16a34a",
+            background: "#f0fdf4",
+            border: "1px solid #bbf7d0",
+            padding: "2px 9px",
             borderRadius: 20,
             fontFamily: "'JetBrains Mono',monospace",
+            letterSpacing: "0.04em",
           }}
         >
           ● LIVE
@@ -696,7 +730,7 @@ function HeroVisual() {
               width: 7,
               height: 7,
               borderRadius: "50%",
-              background: dot(tx.status),
+              background: dotColor(tx.status),
               flexShrink: 0,
             }}
           />
@@ -711,7 +745,7 @@ function HeroVisual() {
             >
               {tx.id}
             </div>
-            <div style={{ fontSize: 11, color: "#999", marginTop: 1 }}>
+            <div style={{ fontSize: 11, color: "#bbb", marginTop: 1 }}>
               {tx.method}
             </div>
           </div>
@@ -719,13 +753,21 @@ function HeroVisual() {
             style={{
               fontSize: 13,
               fontWeight: 600,
-              color: tx.amount.startsWith("+") ? "#1a1a2e" : "#888",
+              color: tx.amount.startsWith("+") ? "#1a1a2e" : "#aaa",
               letterSpacing: "-0.01em",
+              fontFamily: "'JetBrains Mono',monospace",
             }}
           >
             {tx.amount}
           </span>
-          <span style={{ fontSize: 10.5, color: "#bbb", whiteSpace: "nowrap" }}>
+          <span
+            style={{
+              fontSize: 10.5,
+              color: "#ccc",
+              whiteSpace: "nowrap",
+              fontFamily: "'JetBrains Mono',monospace",
+            }}
+          >
             {tx.time}
           </span>
         </div>
@@ -733,20 +775,20 @@ function HeroVisual() {
       <div
         style={{
           background: "#fafafa",
-          borderTop: "1px solid #f0f0f0",
+          borderTop: "1px solid #f0f0f6",
           padding: "10px 18px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
-        <span style={{ fontSize: 11, color: "#aaa" }}>
+        <span style={{ fontSize: 11, color: "#ccc" }}>
           Showing last 6 of 2,841 today
         </span>
         <span
           style={{
             fontSize: 11,
-            color: "#2d2d6b",
+            color: "#1e1e4a",
             fontWeight: 500,
             cursor: "pointer",
           }}
@@ -759,28 +801,8 @@ function HeroVisual() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   SHARED COMPONENTS
+   SHARED
 ───────────────────────────────────────────────────────────────── */
-function Check() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      style={{ flexShrink: 0, marginTop: 1 }}
-    >
-      <circle cx="7" cy="7" r="6.5" stroke="#2d2d6b" strokeWidth="1" />
-      <path
-        d="M4 7L6 9L10 5"
-        stroke="#2d2d6b"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 function CheckItem({ text }) {
   return (
     <li
@@ -789,40 +811,57 @@ function CheckItem({ text }) {
         alignItems: "flex-start",
         gap: 10,
         fontSize: 13.5,
-        color: "#444",
-        lineHeight: 1.6,
+        color: "#555",
+        lineHeight: 1.65,
       }}
     >
-      <Check />
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 15 15"
+        fill="none"
+        style={{ flexShrink: 0, marginTop: 2 }}
+      >
+        <rect x=".5" y=".5" width="14" height="14" rx="3.5" stroke="#d0d0e8" />
+        <path
+          d="M4 7.5L6.5 10L11 5"
+          stroke="#1e1e4a"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
       <span>{text}</span>
     </li>
   );
 }
+
 function SLabel({ children }) {
   return (
     <div
       style={{
-        fontFamily: "Inter,sans-serif",
-        fontSize: 11,
+        fontSize: 10.5,
         fontWeight: 600,
-        letterSpacing: "0.12em",
+        letterSpacing: "0.13em",
         textTransform: "uppercase",
         color: "#6060a8",
+        fontFamily: "'JetBrains Mono',monospace",
       }}
     >
       {children}
     </div>
   );
 }
+
 function H2({ children, style: s = {} }) {
   return (
     <h2
       style={{
         fontFamily: "Inter,sans-serif",
         fontWeight: 700,
-        fontSize: "clamp(1.6rem,2.8vw,2.3rem)",
-        lineHeight: 1.14,
-        letterSpacing: "-0.025em",
+        fontSize: "clamp(1.65rem,2.8vw,2.35rem)",
+        lineHeight: 1.12,
+        letterSpacing: "-0.028em",
         color: "#1a1a2e",
         margin: 0,
         ...s,
@@ -832,9 +871,6 @@ function H2({ children, style: s = {} }) {
     </h2>
   );
 }
-function Divider() {
-  return <div style={{ borderTop: "1px solid #f0f0f0" }} />;
-}
 
 function CodeBlock({ code, lang }) {
   const [copied, setCopied] = useState(false);
@@ -842,8 +878,8 @@ function CodeBlock({ code, lang }) {
     <div
       style={{
         background: "#0c0c10",
-        borderRadius: 10,
-        border: "1px solid #1c1c28",
+        borderRadius: 9,
+        border: "1px solid #1c1c2a",
         overflow: "hidden",
       }}
     >
@@ -858,10 +894,9 @@ function CodeBlock({ code, lang }) {
       >
         <span
           style={{
-            fontFamily: "Inter,sans-serif",
+            fontFamily: "'JetBrains Mono',monospace",
             fontSize: 11,
-            color: "#4a4a6a",
-            fontWeight: 500,
+            color: "#3a3a5a",
           }}
         >
           {lang}
@@ -873,15 +908,14 @@ function CodeBlock({ code, lang }) {
             setTimeout(() => setCopied(false), 1800);
           }}
           style={{
-            fontFamily: "Inter,sans-serif",
+            fontFamily: "'JetBrains Mono',monospace",
             fontSize: 11,
-            color: "#4a4a6a",
+            color: copied ? "#7878c8" : "#3a3a5a",
             background: "none",
             border: "none",
             cursor: "pointer",
+            transition: "color 0.15s",
           }}
-          onMouseOver={(e) => (e.target.style.color = "#aaa")}
-          onMouseOut={(e) => (e.target.style.color = "#4a4a6a")}
         >
           {copied ? "copied ✓" : "copy"}
         </button>
@@ -890,7 +924,7 @@ function CodeBlock({ code, lang }) {
         style={{
           fontFamily: "'JetBrains Mono',monospace",
           fontSize: 12.5,
-          color: "#c9d1d9",
+          color: "#b0b8d8",
           lineHeight: 1.72,
           padding: "16px 18px",
           margin: 0,
@@ -903,19 +937,21 @@ function CodeBlock({ code, lang }) {
     </div>
   );
 }
+
 function statusBadge(s) {
   const m = {
-    succeeded: ["#0d2b1a", "#39d353"],
-    processed: ["#0d2b1a", "#39d353"],
-    active: ["#0d2b1a", "#39d353"],
-    pending: ["#2b240d", "#d3a239"],
-    in_transit: ["#1a1f2b", "#6e9ef5"],
-    past_due: ["#2b130d", "#d35339"],
+    succeeded: ["#f0fdf4", "#15803d", "#bbf7d0"],
+    processed: ["#f0fdf4", "#15803d", "#bbf7d0"],
+    active: ["#f0fdf4", "#15803d", "#bbf7d0"],
+    pending: ["#fffbeb", "#b45309", "#fde68a"],
+    in_transit: ["#eff6ff", "#1d4ed8", "#bfdbfe"],
+    past_due: ["#fef2f2", "#b91c1c", "#fecaca"],
   };
-  const [bg, color] = m[s] || ["#1a1a22", "#888"];
+  const [bg, color, border] = m[s] || ["#f5f5f8", "#888", "#ddd"];
   return {
     background: bg,
     color,
+    border: `1px solid ${border}`,
     fontSize: 9.5,
     padding: "2px 7px",
     borderRadius: 4,
@@ -926,28 +962,32 @@ function statusBadge(s) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   MAIN PAGE
+   MAIN
 ───────────────────────────────────────────────────────────────── */
 export default function PayFlow() {
   const [activeFeature, setActiveFeature] = useState(0);
   const [activeTab, setActiveTab] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+
   const refs = {
     products: useRef(null),
     developers: useRef(null),
     docs: useRef(null),
     company: useRef(null),
   };
+
   const scrollTo = (key) => {
     refs[key]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setMobileOpen(false);
   };
+
   const NAV = [
     { label: "Products", key: "products" },
     { label: "Developers", key: "developers" },
     { label: "Docs", key: "docs" },
     { label: "Company", key: "company" },
   ];
+
   const codeSnippets = [
     { label: "Create a charge", code: SNIPPET_CHARGE, lang: "node.js" },
     { label: "Handle webhooks", code: SNIPPET_WEBHOOK, lang: "node.js" },
@@ -967,36 +1007,83 @@ export default function PayFlow() {
         *,*::before,*::after{box-sizing:border-box;}
         html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
         body{margin:0;background:#fff;}
+
         .W{width:100%;padding:0 18px;}
         @media(min-width:1600px){.W{padding:0 28px;}}
-        .btn-p{background:#1e1e4a;color:#fff;font-size:13.5px;font-weight:500;padding:10px 22px;border-radius:6px;border:none;cursor:pointer;transition:background 0.15s,transform 0.1s;font-family:Inter,sans-serif;letter-spacing:-0.01em;}
-        .btn-p:hover{background:#15153a;transform:translateY(-1px);}
-        .btn-o{background:transparent;color:#1e1e4a;font-size:13.5px;font-weight:500;padding:10px 22px;border-radius:6px;border:1px solid #d0d0e0;cursor:pointer;transition:border-color 0.15s,color 0.15s;font-family:Inter,sans-serif;letter-spacing:-0.01em;}
-        .btn-o:hover{border-color:#1e1e4a;color:#15153a;}
-        .nav-a{font-size:13.5px;color:#555;font-weight:400;text-decoration:none;transition:color 0.12s;letter-spacing:-0.01em;cursor:pointer;background:none;border:none;font-family:Inter,sans-serif;padding:0;}
+
+        .btn-p{
+          background:#1e1e4a;color:#fff;font-size:13.5px;font-weight:500;
+          padding:10px 22px;border-radius:6px;border:none;cursor:pointer;
+          transition:background 0.15s,transform 0.1s;
+          font-family:Inter,sans-serif;letter-spacing:-0.01em;
+        }
+        .btn-p:hover{background:#16163a;transform:translateY(-1px);}
+
+        .btn-o{
+          background:transparent;color:#1e1e4a;font-size:13.5px;font-weight:500;
+          padding:10px 22px;border-radius:6px;border:1px solid #dcdce8;cursor:pointer;
+          transition:border-color 0.15s,background 0.15s;
+          font-family:Inter,sans-serif;letter-spacing:-0.01em;
+        }
+        .btn-o:hover{border-color:#1e1e4a;background:#fafafd;}
+
+        .nav-a{
+          font-size:13.5px;color:#666;font-weight:400;text-decoration:none;
+          transition:color 0.12s;letter-spacing:-0.01em;cursor:pointer;
+          background:none;border:none;font-family:Inter,sans-serif;padding:0;
+        }
         .nav-a:hover{color:#1a1a2e;}
-        .ftab{font-size:12.5px;font-weight:500;padding:6px 15px;border-radius:5px;cursor:pointer;transition:all 0.13s;color:#666;border:1px solid transparent;background:transparent;font-family:Inter,sans-serif;letter-spacing:-0.01em;}
-        .ftab.on{color:#1e1e4a;background:#f0f0f8;border-color:#d0d0e8;}
+
+        .ftab{
+          font-size:12.5px;font-weight:500;padding:6px 14px;border-radius:5px;
+          cursor:pointer;transition:all 0.13s;color:#777;
+          border:1px solid transparent;background:transparent;
+          font-family:Inter,sans-serif;letter-spacing:-0.01em;
+        }
+        .ftab.on{color:#1e1e4a;background:#f0f0f8;border-color:#d4d4ec;}
         .ftab:not(.on):hover{color:#333;background:#f6f6fa;}
-        .s-card{border:1px solid #ebebf0;border-radius:8px;padding:18px;transition:border-color 0.18s,background 0.18s;}
-        .s-card:hover{border-color:#c0c0dc;background:#fafafa;}
-        .t-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #181824;gap:12px;}
+
+        .s-card{
+          border:1px solid #eaeaf0;border-radius:8px;padding:18px;
+          transition:border-color 0.2s,box-shadow 0.2s;
+        }
+        .s-card:hover{border-color:#c4c4dc;box-shadow:0 2px 12px rgba(30,30,74,0.05);}
+
+        .t-row{
+          display:flex;align-items:center;justify-content:space-between;
+          padding:9px 0;border-bottom:1px solid #181824;gap:12px;
+        }
         .t-row:last-child{border-bottom:none;}
-        .snum{font-size:11px;font-weight:600;letter-spacing:0.08em;color:#c0c0d4;font-family:'JetBrains Mono',monospace;}
+
+        .snum{
+          font-size:11px;font-weight:600;letter-spacing:0.08em;
+          color:#c0c0d8;font-family:'JetBrains Mono',monospace;
+        }
+
         @keyframes scroll-left{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-        .ticker-track{display:flex;width:max-content;animation:scroll-left 42s linear infinite;}
+        .ticker-track{display:flex;width:max-content;animation:scroll-left 44s linear infinite;}
         .ticker-track:hover{animation-play-state:paused;}
+
+        @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+        .fu{animation:fadeUp 0.55s ease both;}
+        .fu1{animation-delay:0.08s;} .fu2{animation-delay:0.18s;}
+        .fu3{animation-delay:0.28s;} .fu4{animation-delay:0.38s;}
+
         .g2{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;}
         .g3{display:grid;grid-template-columns:repeat(3,1fr);}
-        .gs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-        @media(max-width:900px){.g2{grid-template-columns:1fr;gap:32px;}.g3{grid-template-columns:1fr;}.gs{grid-template-columns:repeat(2,1fr);}}
+        .gs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+        @media(max-width:900px){
+          .g2{grid-template-columns:1fr;gap:32px;}
+          .g3{grid-template-columns:1fr;}
+          .gs{grid-template-columns:repeat(2,1fr);}
+        }
         @media(max-width:560px){.gs{grid-template-columns:1fr;}}
-        footer a{color:#555;font-size:13px;text-decoration:none;transition:color 0.13s;}
+
+        footer a{color:#999;font-size:13px;text-decoration:none;transition:color 0.13s;}
         footer a:hover{color:#1a1a2e;}
-        .eng-bg{background-color:#fafafa;background-image:radial-gradient(circle,#e8e8f0 1px,transparent 1px);background-size:24px 24px;}
       `}</style>
 
-      {/* NAV */}
+      {/* ── NAV ── */}
       <nav
         style={{
           position: "sticky",
@@ -1004,7 +1091,7 @@ export default function PayFlow() {
           zIndex: 50,
           background: "rgba(255,255,255,0.97)",
           backdropFilter: "blur(10px)",
-          borderBottom: "1px solid #f0f0f0",
+          borderBottom: "1px solid #f0f0f4",
         }}
       >
         <div
@@ -1016,11 +1103,11 @@ export default function PayFlow() {
             justifyContent: "space-between",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <img
               src="/logo.png"
               alt="PayFlow"
-              style={{ height: 25, width: "auto" }}
+              style={{ height: 26, width: "auto", display: "block" }}
             />
             <span
               style={{
@@ -1033,10 +1120,7 @@ export default function PayFlow() {
               PayFlow
             </span>
           </div>
-          <div
-            className="hidden md:flex"
-            style={{ gap: 24, alignItems: "center" }}
-          >
+          <div style={{ display: "flex", gap: 26, alignItems: "center" }}>
             {NAV.map((n) => (
               <button
                 key={n.label}
@@ -1047,10 +1131,7 @@ export default function PayFlow() {
               </button>
             ))}
           </div>
-          <div
-            className="hidden md:flex"
-            style={{ gap: 8, alignItems: "center" }}
-          >
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button
               className="btn-o"
               style={{ padding: "7px 16px", fontSize: 13 }}
@@ -1065,12 +1146,12 @@ export default function PayFlow() {
             </button>
           </div>
           <button
-            className="md:hidden"
             style={{
+              display: "none",
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "#444",
+              color: "#555",
               padding: 4,
             }}
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -1102,7 +1183,7 @@ export default function PayFlow() {
         {mobileOpen && (
           <div
             style={{
-              borderTop: "1px solid #f0f0f0",
+              borderTop: "1px solid #f0f0f4",
               background: "#fff",
               padding: "0 18px 18px",
             }}
@@ -1129,60 +1210,74 @@ export default function PayFlow() {
         )}
       </nav>
 
-      {/* HERO */}
-      <section className="W" style={{ paddingTop: 50, paddingBottom: 50 }}>
-        <div className="g2" style={{ alignItems: "center" }}>
+      {/* ── HERO ── */}
+      <section className="W" style={{ paddingTop: 56, paddingBottom: 56 }}>
+        <div className="g2" style={{ alignItems: "center", gap: 52 }}>
           <div>
+            {/* version pill */}
             <div
+              className="fu"
               style={{
-                fontFamily: "'JetBrains Mono',monospace",
-                fontSize: 11,
-                fontWeight: 500,
-                color: "#8888b0",
-                letterSpacing: "0.08em",
-                marginBottom: 18,
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: 8,
+                gap: 7,
+                border: "1px solid #e8e8f4",
+                borderRadius: 4,
+                padding: "4px 11px",
+                marginBottom: 20,
+                background: "#fafafd",
               }}
             >
               <span
                 style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#16a34a",
                   display: "inline-block",
-                  width: 24,
-                  height: 1,
-                  background: "#c0c0d8",
                 }}
               />
-              v1.0 — payment infrastructure
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  color: "#7070a8",
+                  fontFamily: "'JetBrains Mono',monospace",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                v1.0 — payment infrastructure
+              </span>
             </div>
+
             <h1
+              className="fu fu1"
               style={{
                 fontFamily: "Inter,sans-serif",
                 fontWeight: 700,
-                fontSize: "clamp(2.1rem,4.2vw,3.5rem)",
-                lineHeight: 1.07,
-                letterSpacing: "-0.035em",
+                fontSize: "clamp(2.1rem,4.2vw,3.4rem)",
+                lineHeight: 1.06,
+                letterSpacing: "-0.036em",
                 color: "#1a1a2e",
                 margin: 0,
               }}
             >
               The payment infrastructure
               <br />
-              <span style={{ color: "#1e1e4a" }}>
-                modern businesses
-                <br />
-                are built on.
-              </span>
+              modern businesses
+              <br />
+              are built on.
             </h1>
+
             <p
+              className="fu fu2"
               style={{
                 marginTop: 20,
-                fontSize: 16,
-                color: "#555",
-                lineHeight: 1.74,
+                fontSize: 15.5,
+                color: "#666",
+                lineHeight: 1.76,
                 fontWeight: 400,
-                maxWidth: 510,
+                maxWidth: 500,
                 letterSpacing: "-0.01em",
               }}
             >
@@ -1190,7 +1285,9 @@ export default function PayFlow() {
               developers the primitives to build any payment product — from
               simple checkouts to complex multi-party marketplaces.
             </p>
+
             <div
+              className="fu fu3"
               style={{
                 display: "flex",
                 flexWrap: "wrap",
@@ -1211,21 +1308,22 @@ export default function PayFlow() {
                 Read the docs →
               </button>
             </div>
-            <div style={{ marginTop: 28 }}>
+
+            <div className="fu fu4" style={{ marginTop: 28 }}>
               <p
                 style={{
-                  fontSize: 11,
-                  color: "#c0c0c8",
+                  fontSize: 10.5,
+                  color: "#c8c8d8",
                   margin: "0 0 10px",
                   fontWeight: 600,
-                  letterSpacing: "0.08em",
+                  letterSpacing: "0.1em",
                   textTransform: "uppercase",
                   fontFamily: "'JetBrains Mono',monospace",
                 }}
               >
                 Supported methods
               </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                 {[
                   "Visa",
                   "Mastercard",
@@ -1241,12 +1339,11 @@ export default function PayFlow() {
                     style={{
                       fontSize: 11,
                       fontWeight: 600,
-                      color: "#888",
+                      color: "#999",
                       padding: "3px 10px",
-                      border: "1px solid #e8e8f0",
-                      borderRadius: 5,
+                      border: "1px solid #eaeaf0",
+                      borderRadius: 4,
                       background: "#fafafa",
-                      fontFamily: "Inter,sans-serif",
                       letterSpacing: "0.02em",
                     }}
                   >
@@ -1256,17 +1353,20 @@ export default function PayFlow() {
               </div>
             </div>
           </div>
-          <HeroVisual />
+
+          <div className="fu fu2">
+            <HeroVisual />
+          </div>
         </div>
       </section>
 
-      <Divider />
+      <div style={{ borderTop: "1px solid #f0f0f4" }} />
 
-      {/* FEATURES */}
+      {/* ── FEATURES ── */}
       <section
         ref={refs.products}
         className="W"
-        style={{ paddingTop: 50, paddingBottom: 50, scrollMarginTop: 54 }}
+        style={{ paddingTop: 56, paddingBottom: 56, scrollMarginTop: 54 }}
       >
         <div style={{ marginBottom: 28 }}>
           <SLabel>What PayFlow does</SLabel>
@@ -1279,9 +1379,9 @@ export default function PayFlow() {
         <div
           style={{
             display: "flex",
-            gap: 6,
+            gap: 5,
             flexWrap: "wrap",
-            marginBottom: 26,
+            marginBottom: 28,
           }}
         >
           {FEATURES.map((f, i) => (
@@ -1300,9 +1400,9 @@ export default function PayFlow() {
               style={{
                 fontFamily: "Inter,sans-serif",
                 fontWeight: 600,
-                fontSize: "1.35rem",
-                letterSpacing: "-0.02em",
-                lineHeight: 1.3,
+                fontSize: "1.3rem",
+                letterSpacing: "-0.022em",
+                lineHeight: 1.28,
                 color: "#1a1a2e",
                 margin: 0,
               }}
@@ -1313,8 +1413,8 @@ export default function PayFlow() {
               style={{
                 marginTop: 12,
                 fontSize: 14.5,
-                color: "#555",
-                lineHeight: 1.75,
+                color: "#666",
+                lineHeight: 1.76,
                 fontWeight: 400,
               }}
             >
@@ -1338,7 +1438,7 @@ export default function PayFlow() {
               href="#"
               style={{
                 display: "inline-block",
-                marginTop: 24,
+                marginTop: 22,
                 fontSize: 13,
                 fontWeight: 500,
                 color: "#1e1e4a",
@@ -1351,11 +1451,12 @@ export default function PayFlow() {
               Explore {FEATURES[activeFeature].tag} docs →
             </a>
           </div>
+          {/* dark terminal panel */}
           <div
             style={{
               background: "#0c0c10",
-              borderRadius: 10,
-              border: "1px solid #1c1c28",
+              borderRadius: 9,
+              border: "1px solid #1c1c2a",
               overflow: "hidden",
             }}
           >
@@ -1370,24 +1471,24 @@ export default function PayFlow() {
             >
               <span
                 style={{
-                  width: 10,
-                  height: 10,
+                  width: 9,
+                  height: 9,
                   borderRadius: "50%",
                   background: "#ff5f57",
                 }}
               />
               <span
                 style={{
-                  width: 10,
-                  height: 10,
+                  width: 9,
+                  height: 9,
                   borderRadius: "50%",
                   background: "#ffbd2e",
                 }}
               />
               <span
                 style={{
-                  width: 10,
-                  height: 10,
+                  width: 9,
+                  height: 9,
                   borderRadius: "50%",
                   background: "#28c840",
                 }}
@@ -1395,21 +1496,47 @@ export default function PayFlow() {
               <span
                 style={{
                   marginLeft: 10,
-                  fontSize: 11,
-                  color: "#3a3a5a",
+                  fontSize: 10.5,
+                  color: "#2e2e4e",
                   fontFamily: "'JetBrains Mono',monospace",
                 }}
               >
                 payflow.dashboard — live
               </span>
             </div>
-            <div style={{ padding: "10px 18px" }}>
+            <div style={{ padding: "8px 18px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "6px 0 8px",
+                  borderBottom: "1px solid #181824",
+                  marginBottom: 2,
+                }}
+              >
+                {["ID", "Method", "Amount", "Status"].map((h) => (
+                  <span
+                    key={h}
+                    style={{
+                      fontFamily: "'JetBrains Mono',monospace",
+                      fontSize: 9.5,
+                      color: "#2a2a48",
+                      fontWeight: 600,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {h}
+                  </span>
+                ))}
+              </div>
               {FEATURES[activeFeature].rows.map((row) => (
                 <div key={row.id} className="t-row">
                   <span
                     style={{
                       fontFamily: "'JetBrains Mono',monospace",
-                      fontSize: 11,
+                      fontSize: 10.5,
                       color: "#4a4a6a",
                     }}
                   >
@@ -1418,8 +1545,8 @@ export default function PayFlow() {
                   <span
                     style={{
                       fontFamily: "'JetBrains Mono',monospace",
-                      fontSize: 11,
-                      color: "#777",
+                      fontSize: 10.5,
+                      color: "#555",
                     }}
                   >
                     {row.col2}
@@ -1427,8 +1554,8 @@ export default function PayFlow() {
                   <span
                     style={{
                       fontFamily: "'JetBrains Mono',monospace",
-                      fontSize: 11,
-                      color: "#c9d1d9",
+                      fontSize: 10.5,
+                      color: "#b0b8d0",
                     }}
                   >
                     {row.amount}
@@ -1441,12 +1568,18 @@ export default function PayFlow() {
         </div>
       </section>
 
-      <Divider />
+      <div style={{ borderTop: "1px solid #f0f0f4" }} />
 
-      {/* HOW IT WORKS */}
+      {/* ── HOW IT WORKS ── */}
       <section
-        className="W eng-bg"
-        style={{ paddingTop: 50, paddingBottom: 50 }}
+        className="W"
+        style={{
+          paddingTop: 56,
+          paddingBottom: 56,
+          backgroundImage:
+            "radial-gradient(circle,#e8e8f0 1px,transparent 1px)",
+          backgroundSize: "24px 24px",
+        }}
       >
         <div style={{ marginBottom: 36 }}>
           <SLabel>Getting started</SLabel>
@@ -1463,9 +1596,9 @@ export default function PayFlow() {
               style={{
                 paddingTop: 24,
                 paddingBottom: 24,
-                paddingRight: i < 2 ? 36 : 0,
-                paddingLeft: i > 0 ? 36 : 0,
-                borderRight: i < 2 ? "1px solid #e4e4ee" : "none",
+                paddingRight: i < 2 ? 38 : 0,
+                paddingLeft: i > 0 ? 38 : 0,
+                borderRight: i < 2 ? "1px solid #e8e8f2" : "none",
               }}
             >
               <span className="snum">{step.step}</span>
@@ -1474,8 +1607,8 @@ export default function PayFlow() {
                   fontFamily: "Inter,sans-serif",
                   fontWeight: 600,
                   fontSize: "1.05rem",
-                  letterSpacing: "-0.015em",
-                  marginTop: 10,
+                  letterSpacing: "-0.018em",
+                  marginTop: 12,
                   marginBottom: 0,
                   color: "#1a1a2e",
                 }}
@@ -1498,12 +1631,13 @@ export default function PayFlow() {
         </div>
       </section>
 
-      <Divider />
-      {/* ICON TICKER */}
+      <div style={{ borderTop: "1px solid #f0f0f4" }} />
+
+      {/* ── TECH TICKER ── */}
       <div
         style={{
           overflow: "hidden",
-          borderBottom: "1px solid #f0f0f0",
+          borderBottom: "1px solid #f0f0f4",
           background: "#fafafa",
           padding: "12px 0",
         }}
@@ -1526,10 +1660,10 @@ export default function PayFlow() {
                   alt={icon.name}
                   title={icon.name}
                   style={{
-                    width: 20,
-                    height: 20,
+                    width: 18,
+                    height: 18,
                     objectFit: "contain",
-                    filter: "grayscale(10%)",
+                    opacity: 0.9,
                   }}
                   onError={(e) => (e.target.style.display = "none")}
                 />
@@ -1537,7 +1671,7 @@ export default function PayFlow() {
                   style={{
                     fontSize: 11.5,
                     fontWeight: 500,
-                    color: "#999",
+                    color: "#bbb",
                     fontFamily: "Inter,sans-serif",
                     whiteSpace: "nowrap",
                     letterSpacing: "-0.01em",
@@ -1551,11 +1685,11 @@ export default function PayFlow() {
         </div>
       </div>
 
-      {/* DEVELOPER */}
+      {/* ── DEVELOPERS ── */}
       <section
         ref={refs.developers}
         className="W"
-        style={{ paddingTop: 50, paddingBottom: 50, scrollMarginTop: 54 }}
+        style={{ paddingTop: 56, paddingBottom: 56, scrollMarginTop: 54 }}
       >
         <div className="g2" style={{ gap: 52 }}>
           <div>
@@ -1569,8 +1703,8 @@ export default function PayFlow() {
               style={{
                 marginTop: 14,
                 fontSize: 14.5,
-                color: "#555",
-                lineHeight: 1.75,
+                color: "#666",
+                lineHeight: 1.76,
                 fontWeight: 400,
               }}
             >
@@ -1605,7 +1739,7 @@ export default function PayFlow() {
             </div>
           </div>
           <div>
-            <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+            <div style={{ display: "flex", gap: 3, marginBottom: 8 }}>
               {codeSnippets.map((s, i) => (
                 <button
                   key={i}
@@ -1614,13 +1748,14 @@ export default function PayFlow() {
                     fontFamily: "'JetBrains Mono',monospace",
                     fontSize: 11.5,
                     fontWeight: 500,
-                    padding: "5px 11px",
+                    padding: "5px 12px",
                     borderRadius: 5,
-                    border: "none",
+                    border: "1px solid",
                     cursor: "pointer",
-                    background: activeTab === i ? "#1e1e4a" : "transparent",
-                    color: activeTab === i ? "#fff" : "#888",
                     transition: "all 0.13s",
+                    background: activeTab === i ? "#1e1e4a" : "transparent",
+                    color: activeTab === i ? "#fff" : "#999",
+                    borderColor: activeTab === i ? "#1e1e4a" : "#e4e4ee",
                   }}
                 >
                   {s.label}
@@ -1635,17 +1770,17 @@ export default function PayFlow() {
         </div>
       </section>
 
-      {/* ARCHITECTURE */}
+      {/* ── ARCHITECTURE ── */}
       <section
         ref={refs.docs}
         style={{
           background: "#fafafa",
-          borderTop: "1px solid #f0f0f0",
-          borderBottom: "1px solid #f0f0f0",
+          borderTop: "1px solid #f0f0f4",
+          borderBottom: "1px solid #f0f0f4",
           scrollMarginTop: 54,
         }}
       >
-        <div className="W" style={{ paddingTop: 50, paddingBottom: 50 }}>
+        <div className="W" style={{ paddingTop: 56, paddingBottom: 56 }}>
           <div style={{ marginBottom: 30 }}>
             <SLabel>System Architecture</SLabel>
             <H2 style={{ marginTop: 10 }}>How a PayFlow transaction flows.</H2>
@@ -1653,10 +1788,10 @@ export default function PayFlow() {
               style={{
                 marginTop: 12,
                 fontSize: 14.5,
-                color: "#555",
+                color: "#666",
                 fontWeight: 400,
-                lineHeight: 1.75,
-                maxWidth: 580,
+                lineHeight: 1.76,
+                maxWidth: 560,
               }}
             >
               Every payment touches a chain of independent services connected by
@@ -1668,11 +1803,12 @@ export default function PayFlow() {
           <div
             style={{
               border: "1px solid #e4e4ee",
-              borderRadius: 12,
+              borderRadius: 10,
               background: "#fff",
               padding: "24px 14px",
-              marginBottom: 30,
+              marginBottom: 28,
               overflow: "hidden",
+              boxShadow: "0 1px 8px rgba(30,30,74,0.04)",
             }}
           >
             <ArchDiagram />
@@ -1695,7 +1831,7 @@ export default function PayFlow() {
                 <p
                   style={{
                     fontSize: 13,
-                    color: "#666",
+                    color: "#777",
                     lineHeight: 1.65,
                     fontWeight: 400,
                     margin: 0,
@@ -1709,27 +1845,27 @@ export default function PayFlow() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="W" style={{ paddingTop: 50, paddingBottom: 50 }}>
+      {/* ── CTA ── */}
+      <section className="W" style={{ paddingTop: 56, paddingBottom: 56 }}>
         <div
           style={{
             position: "relative",
             textAlign: "center",
-            padding: "60px 32px",
-            background: "#fafafa",
-            borderRadius: 12,
+            padding: "64px 32px",
+            background: "#fafafd",
+            borderRadius: 10,
             overflow: "hidden",
+            border: "1px solid #eeeef4",
           }}
         >
-          {/* Corner marks — engineered feel, no full border */}
           {[
             { t: 0, l: 0 },
             { t: 0, r: 0 },
             { b: 0, l: 0 },
             { b: 0, r: 0 },
           ].map((pos, i) => {
-            const isR = "r" in pos;
-            const isB = "b" in pos;
+            const isR = "r" in pos,
+              isB = "b" in pos;
             return (
               <div
                 key={i}
@@ -1757,7 +1893,7 @@ export default function PayFlow() {
             style={{
               marginTop: 14,
               fontSize: 15,
-              color: "#555",
+              color: "#666",
               fontWeight: 400,
               maxWidth: 400,
               margin: "14px auto 0",
@@ -1792,11 +1928,11 @@ export default function PayFlow() {
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* ── FOOTER ── */}
       <footer
         ref={refs.company}
         style={{
-          borderTop: "1px solid #ebebf0",
+          borderTop: "1px solid #eeeef4",
           background: "#f6f6fa",
           scrollMarginTop: 54,
         }}
@@ -1821,7 +1957,7 @@ export default function PayFlow() {
                 <img
                   src="/logo.png"
                   alt="PayFlow"
-                  style={{ height: 20, width: "auto" }}
+                  style={{ height: 20, width: "auto", display: "block" }}
                 />
                 <span
                   style={{
@@ -1837,8 +1973,8 @@ export default function PayFlow() {
               <p
                 style={{
                   fontSize: 12.5,
-                  color: "#666",
-                  lineHeight: 1.6,
+                  color: "#888",
+                  lineHeight: 1.65,
                   fontWeight: 400,
                   margin: 0,
                 }}
@@ -1871,9 +2007,9 @@ export default function PayFlow() {
                   style={{
                     fontSize: 10.5,
                     fontWeight: 600,
-                    letterSpacing: "0.08em",
+                    letterSpacing: "0.09em",
                     textTransform: "uppercase",
-                    color: "#999",
+                    color: "#bbb",
                     marginBottom: 10,
                     fontFamily: "'JetBrains Mono',monospace",
                   }}
@@ -1901,7 +2037,7 @@ export default function PayFlow() {
           </div>
           <div
             style={{
-              borderTop: "1px solid #e4e4ee",
+              borderTop: "1px solid #e8e8f0",
               marginTop: 24,
               paddingTop: 20,
               display: "flex",
@@ -1914,7 +2050,7 @@ export default function PayFlow() {
             <span
               style={{
                 fontSize: 12,
-                color: "#999",
+                color: "#ccc",
                 fontFamily: "'JetBrains Mono',monospace",
               }}
             >
@@ -1927,11 +2063,11 @@ export default function PayFlow() {
                   href="#"
                   style={{
                     fontSize: 12,
-                    color: "#999",
-                    fontFamily: "Inter,sans-serif",
+                    color: "#ccc",
+                    fontFamily: "'JetBrains Mono',monospace",
                   }}
                   onMouseOver={(e) => (e.target.style.color = "#1a1a2e")}
-                  onMouseOut={(e) => (e.target.style.color = "#999")}
+                  onMouseOut={(e) => (e.target.style.color = "#ccc")}
                 >
                   {l}
                 </a>
