@@ -1,7 +1,5 @@
-import Redis from "ioredis";
+import { redis } from "../redis.js";
 import "dotenv/config";
-
-export const redis = new Redis(process.env.REDIS_URL);
 
 export const checkHealth = async () => {
   try {
@@ -30,19 +28,27 @@ export const getRiskScore = async (tenantId) => {
 
   const velocityCount = parseInt(velocity) || 0;
   const failureCount = parseInt(failures) || 0;
-  const score = (velocityCount > 5 ? 60 : 0) + (failureCount > 3 ? 70 : 0);
+
+  const velocityThreshold = parseInt(process.env.FRAUD_VELOCITY_THRESHOLD) || 5;
+  const failureThreshold = parseInt(process.env.FRAUD_FAILURE_THRESHOLD) || 3;
+
+  const score =
+    (velocityCount > velocityThreshold ? 60 : 0) +
+    (failureCount > failureThreshold ? 70 : 0);
+
+  const riskLevel =
+    score >= 100
+      ? "critical"
+      : score >= 60
+        ? "high"
+        : score >= 40
+          ? "medium"
+          : "low";
 
   return {
     tenantId,
     score,
-    risk:
-      score >= 100
-        ? "critical"
-        : score >= 60
-          ? "high"
-          : score >= 40
-            ? "medium"
-            : "low",
+    risk: riskLevel,
     counters: { velocity: velocityCount, failures: failureCount },
     timestamp: new Date().toISOString(),
   };
@@ -54,3 +60,10 @@ export const resetRiskCounters = async (tenantId) => {
     redis.del(`fraud:failures:${tenantId}`),
   ]);
 };
+
+const shutdown = async () => {
+  await redis.quit();
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

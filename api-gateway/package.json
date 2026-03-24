@@ -1,0 +1,23 @@
+{
+  "name": "@payflow/api-gateway",
+  "version": "1.0.0",
+  "description": "Custom API gateway — auth, routing, rate limiting, request tracing",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-compression": "^1.0.2",
+    "express-rate-limit": "^7.5.0",
+    "http-proxy-middleware": "^3.0.4",
+    "opossum": "^9.0.0",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "uuid": "^13.0.0"
+  }
+}

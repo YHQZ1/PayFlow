@@ -102,10 +102,14 @@ export const revokeKey = async (req, res, next) => {
 export const validateKey = async (req, res, next) => {
   try {
     const result = await tenantService.validateApiKey(req.body.rawKey);
-    if (!result)
-      return res
-        .status(401)
-        .json({ error: "invalid api key", code: "UNAUTHORIZED" });
+
+    if (!result) {
+      return res.status(401).json({
+        error: "invalid api key",
+        code: "UNAUTHORIZED",
+      });
+    }
+
     res.json(result);
   } catch (err) {
     next(err);

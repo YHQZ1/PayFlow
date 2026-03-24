@@ -4,8 +4,6 @@ info:
   description: Accepts and processes payments through the PayFlow platform
   version: 1.0.0
 servers:
-  - url: http://localhost:3000
-    description: Local development
   - url: http://localhost:4000
     description: Via API Gateway
 

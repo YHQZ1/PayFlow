@@ -1,5 +1,14 @@
-import { redis } from "../services/fraud.service.js";
+import { redis } from "../redis.js";
 import { logger } from "../logger.js";
+import "dotenv/config";
+
+const VELOCITY_THRESHOLD = parseInt(process.env.FRAUD_VELOCITY_THRESHOLD) || 5;
+const VELOCITY_WINDOW_SEC =
+  parseInt(process.env.FRAUD_VELOCITY_WINDOW_SEC) || 60;
+const LARGE_AMOUNT_THRESHOLD =
+  parseInt(process.env.FRAUD_LARGE_AMOUNT_THRESHOLD) || 10_000_000;
+const FAILURE_THRESHOLD = parseInt(process.env.FRAUD_FAILURE_THRESHOLD) || 3;
+const FLAG_THRESHOLD = parseInt(process.env.FRAUD_FLAG_THRESHOLD) || 50;
 
 const RULES = {
   VELOCITY: { score: 60, label: "high_velocity" },
@@ -9,19 +18,31 @@ const RULES = {
 
 const checkVelocity = async (tenantId) => {
   const key = `fraud:velocity:${tenantId}`;
-  const count = await redis.incr(key);
-  await redis.expire(key, 60);
-  return count > 5;
+  const script = `
+    local count = redis.call('INCR', KEYS[1])
+    if count == 1 then
+      redis.call('EXPIRE', KEYS[1], ARGV[1])
+    end
+    return count
+  `;
+  const count = await redis.eval(script, 1, key, VELOCITY_WINDOW_SEC);
+  return count > VELOCITY_THRESHOLD;
 };
 
-const checkLargeAmount = (amount) => amount > 10_000_000;
+const checkLargeAmount = (amount) => amount > LARGE_AMOUNT_THRESHOLD;
 
 const checkRepeatedFailure = async (tenantId, status) => {
   if (status !== "failed") return false;
   const key = `fraud:failures:${tenantId}`;
-  const count = await redis.incr(key);
-  await redis.expire(key, 300);
-  return count > 3;
+  const script = `
+    local count = redis.call('INCR', KEYS[1])
+    if count == 1 then
+      redis.call('EXPIRE', KEYS[1], 300)
+    end
+    return count
+  `;
+  const count = await redis.eval(script, 1, key);
+  return count > FAILURE_THRESHOLD;
 };
 
 export const runRules = async ({ tenantId, amount, status }) => {
@@ -51,5 +72,5 @@ export const runRules = async ({ tenantId, amount, status }) => {
     "fraud rules evaluated",
   );
 
-  return { flagged: totalScore >= 50, score: totalScore, flags };
+  return { flagged: totalScore >= FLAG_THRESHOLD, score: totalScore, flags };
 };

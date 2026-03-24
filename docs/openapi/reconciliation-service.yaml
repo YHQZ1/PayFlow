@@ -4,8 +4,6 @@ info:
   description: Verifies external correctness by comparing ledger records against gateway provider data
   version: 1.0.0
 servers:
-  - url: http://localhost:3006
-    description: Local development
   - url: http://localhost:4000
     description: Via API Gateway
 

@@ -4,8 +4,6 @@ info:
   description: Double-entry accounting ledger — records all money movement with journal entries and running balances
   version: 1.0.0
 servers:
-  - url: http://localhost:3001
-    description: Local development
   - url: http://localhost:4000
     description: Via API Gateway
 

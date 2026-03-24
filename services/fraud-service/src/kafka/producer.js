@@ -39,3 +39,28 @@ export const publishFraudAlert = async ({
   });
   logger.warn({ paymentId, tenantId, score }, "fraud alert published");
 };
+
+export const publishToDLQ = async (originalTopic, message) => {
+  await producer.send({
+    topic: `${originalTopic}.dlq`,
+    messages: [
+      {
+        value: JSON.stringify({
+          originalTopic,
+          originalMessage: message.value?.toString(),
+          error: "processing_failed",
+          timestamp: new Date().toISOString(),
+        }),
+      },
+    ],
+  });
+  logger.error({ originalTopic }, "message sent to dead-letter queue");
+};
+
+const shutdown = async () => {
+  logger.info("shutting down fraud-service producer");
+  await producer.disconnect();
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

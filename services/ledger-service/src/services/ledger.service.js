@@ -1,5 +1,5 @@
 import { db } from "../db/index.js";
-import { journalEntries, balances } from "../db/schema.js";
+import { journalEntries, balances, balanceHistory } from "../db/schema.js";
 import { eq, desc, sql } from "drizzle-orm";
 
 export const checkHealth = async () => {
@@ -30,14 +30,26 @@ export const getBalance = async (tenantId) => {
 };
 
 export const getJournal = async (tenantId, { limit = 20, offset = 0 } = {}) => {
-  const rows = await db
-    .select()
-    .from(journalEntries)
-    .where(eq(journalEntries.tenantId, tenantId))
-    .orderBy(desc(journalEntries.createdAt))
-    .limit(limit)
-    .offset(offset);
-  return { data: rows, limit, offset };
+  const [rows, total] = await Promise.all([
+    db
+      .select()
+      .from(journalEntries)
+      .where(eq(journalEntries.tenantId, tenantId))
+      .orderBy(desc(journalEntries.createdAt))
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql`count(*)` })
+      .from(journalEntries)
+      .where(eq(journalEntries.tenantId, tenantId)),
+  ]);
+  return {
+    data: rows,
+    total: Number(total[0].count),
+    limit,
+    offset,
+    hasMore: offset + limit < Number(total[0].count),
+  };
 };
 
 export const getJournalByPayment = async (tenantId, paymentId) => {
@@ -54,36 +66,102 @@ export const writeJournalEntries = async ({
   amount,
   currency,
 }) => {
-  await db.insert(journalEntries).values([
-    {
-      paymentId,
-      tenantId,
-      entryType: "debit",
-      account: "accounts_receivable",
-      amount,
-      currency,
-    },
-    {
-      paymentId,
-      tenantId,
-      entryType: "credit",
-      account: "revenue",
-      amount,
-      currency,
-    },
-  ]);
+  await db.transaction(async (tx) => {
+    await tx.insert(journalEntries).values([
+      {
+        paymentId,
+        tenantId,
+        entryType: "debit",
+        account: "accounts_receivable",
+        amount,
+        currency,
+      },
+      {
+        paymentId,
+        tenantId,
+        entryType: "credit",
+        account: "revenue",
+        amount,
+        currency,
+      },
+    ]);
 
-  const [existing] = await db
-    .select()
-    .from(balances)
-    .where(eq(balances.tenantId, tenantId));
-
-  if (existing) {
-    await db
-      .update(balances)
-      .set({ amount: existing.amount + amount, updatedAt: new Date() })
+    const [existing] = await tx
+      .select()
+      .from(balances)
       .where(eq(balances.tenantId, tenantId));
-  } else {
-    await db.insert(balances).values({ tenantId, amount, currency });
-  }
+
+    const previousAmount = existing?.amount || 0;
+    const newAmount = previousAmount + amount;
+
+    if (existing) {
+      await tx
+        .update(balances)
+        .set({ amount: newAmount, updatedAt: new Date() })
+        .where(eq(balances.tenantId, tenantId));
+    } else {
+      await tx.insert(balances).values({ tenantId, amount, currency });
+    }
+
+    await tx.insert(balanceHistory).values({
+      tenantId,
+      paymentId,
+      previousAmount,
+      newAmount,
+      delta: amount,
+    });
+  });
+};
+
+export const writeRefundEntries = async ({
+  paymentId,
+  tenantId,
+  amount,
+  currency,
+}) => {
+  await db.transaction(async (tx) => {
+    await tx.insert(journalEntries).values([
+      {
+        paymentId,
+        tenantId,
+        entryType: "credit",
+        account: "accounts_receivable",
+        amount,
+        currency,
+      },
+      {
+        paymentId,
+        tenantId,
+        entryType: "debit",
+        account: "revenue",
+        amount,
+        currency,
+      },
+    ]);
+
+    const [existing] = await tx
+      .select()
+      .from(balances)
+      .where(eq(balances.tenantId, tenantId));
+
+    if (!existing) {
+      throw new Error("Cannot refund: no balance found for tenant");
+    }
+
+    const previousAmount = existing.amount;
+    const newAmount = previousAmount - amount;
+
+    await tx
+      .update(balances)
+      .set({ amount: newAmount, updatedAt: new Date() })
+      .where(eq(balances.tenantId, tenantId));
+
+    await tx.insert(balanceHistory).values({
+      tenantId,
+      paymentId,
+      previousAmount,
+      newAmount,
+      delta: -amount,
+    });
+  });
 };

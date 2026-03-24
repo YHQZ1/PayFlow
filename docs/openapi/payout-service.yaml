@@ -4,8 +4,6 @@ info:
   description: Manages money outflow — auto-settlement of succeeded payments and manual payout creation
   version: 1.0.0
 servers:
-  - url: http://localhost:3005
-    description: Local development
   - url: http://localhost:4000
     description: Via API Gateway
 

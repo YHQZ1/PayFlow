@@ -7,8 +7,9 @@ import { errorHandler, notFound } from "./middleware/error.middleware.js";
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use(pinoHttp({ logger }));
+
 
 app.use(
   "/tenants",
@@ -20,7 +21,6 @@ app.use(
     message: { error: "too many requests", code: "RATE_LIMITED" },
   }),
 );
-
 app.use("/tenants", tenantRoutes);
 
 app.use(notFound);

@@ -4,8 +4,8 @@ info:
   description: External payment provider abstraction — normalises Stripe API responses into PayFlow's internal format
   version: 1.0.0
 servers:
-  - url: http://localhost:3004
-    description: Local development
+  - url: http://localhost:4000
+    description: Via API Gateway
 
 tags:
   - name: Health

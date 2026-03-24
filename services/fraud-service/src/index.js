@@ -19,4 +19,12 @@ const start = async () => {
   }
 };
 
+const shutdown = async () => {
+  logger.info("shutting down fraud-service");
+  process.exit(0);
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
+
 start();

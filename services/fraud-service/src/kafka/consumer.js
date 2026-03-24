@@ -1,6 +1,6 @@
 import { Kafka } from "kafkajs";
 import { runRules } from "../rules/engine.js";
-import { publishFraudAlert } from "./producer.js";
+import { publishFraudAlert, publishToDLQ } from "./producer.js";
 import { logger } from "../logger.js";
 import "dotenv/config";
 
@@ -16,32 +16,53 @@ export const startConsumer = async () => {
   await consumer.subscribe({ topic: "payment.created", fromBeginning: false });
 
   await consumer.run({
-    eachMessage: async ({ message }) => {
-      const event = JSON.parse(message.value.toString());
-      const { tenantId } = event;
-      const { paymentId, amount, status } = event.payload;
+    eachMessage: async ({ message, topic, partition, offset }) => {
+      try {
+        const event = JSON.parse(message.value.toString());
 
-      const result = await runRules({ tenantId, amount, status });
+        if (!event.tenantId || !event.payload) {
+          throw new Error("Invalid event structure");
+        }
 
-      if (result.flagged) {
-        logger.warn(
-          { paymentId, tenantId, score: result.score, flags: result.flags },
-          "payment flagged for fraud",
+        const { tenantId } = event;
+        const { paymentId, amount, status } = event.payload;
+
+        const result = await runRules({ tenantId, amount, status });
+
+        if (result.flagged) {
+          logger.warn(
+            { paymentId, tenantId, score: result.score, flags: result.flags },
+            "payment flagged for fraud",
+          );
+          await publishFraudAlert({
+            tenantId,
+            paymentId,
+            score: result.score,
+            flags: result.flags,
+          });
+        } else {
+          logger.info(
+            { paymentId, score: result.score },
+            "payment cleared by fraud engine",
+          );
+        }
+      } catch (err) {
+        logger.error(
+          { err, topic, partition, offset, message: message.value?.toString() },
+          "fraud service failed to process message",
         );
-        await publishFraudAlert({
-          tenantId,
-          paymentId,
-          score: result.score,
-          flags: result.flags,
-        });
-      } else {
-        logger.info(
-          { paymentId, score: result.score },
-          "payment cleared by fraud engine",
-        );
+        await publishToDLQ(topic, message);
       }
     },
   });
 
   logger.info("fraud-service consumer started");
 };
+
+const shutdown = async () => {
+  logger.info("shutting down fraud-service consumer");
+  await consumer.disconnect();
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

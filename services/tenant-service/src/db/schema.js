@@ -13,6 +13,7 @@ export const tenants = pgTable("tenants", {
   status: varchar("status", { length: 50 }).notNull().default("active"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const apiKeys = pgTable("api_keys", {
@@ -22,6 +23,7 @@ export const apiKeys = pgTable("api_keys", {
     .references(() => tenants.id),
   keyHash: varchar("key_hash", { length: 255 }).notNull().unique(),
   keyPrefix: varchar("key_prefix", { length: 20 }).notNull(),
+  expiresAt: timestamp("expires_at"),
   revokedAt: timestamp("revoked_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -32,6 +34,7 @@ export const webhookEndpoints = pgTable("webhook_endpoints", {
     .notNull()
     .references(() => tenants.id),
   url: varchar("url", { length: 500 }).notNull(),
+  secret: varchar("secret", { length: 255 }).notNull(),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

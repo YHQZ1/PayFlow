@@ -20,3 +20,10 @@ export const publishEvent = async (topic, event) => {
     messages: [{ key: event.tenantId, value: JSON.stringify(event) }],
   });
 };
+
+const shutdown = async () => {
+  await producer.disconnect();
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

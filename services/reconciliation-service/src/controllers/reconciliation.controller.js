@@ -8,10 +8,14 @@ export const health = async (req, res) => {
 
 export const run = async (req, res, next) => {
   try {
-    const { tenantId } = req.body;
+    const { tenantId, startDate, endDate } = req.body;
     if (!tenantId) return next(new ValidationError("tenantId is required"));
 
-    const result = await reconciliationService.runReconciliation(tenantId);
+    const result = await reconciliationService.runReconciliation(
+      tenantId,
+      startDate,
+      endDate,
+    );
     res.status(201).json(result);
   } catch (err) {
     next(err);
@@ -20,8 +24,10 @@ export const run = async (req, res, next) => {
 
 export const listRuns = async (req, res, next) => {
   try {
-    const runs = reconciliationService.getRunHistory();
-    res.json({ data: runs });
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = parseInt(req.query.offset) || 0;
+    const result = await reconciliationService.getRunHistory({ limit, offset });
+    res.json(result);
   } catch (err) {
     next(err);
   }
@@ -29,13 +35,14 @@ export const listRuns = async (req, res, next) => {
 
 export const getMismatches = async (req, res, next) => {
   try {
-    const mismatches = reconciliationService.getMismatchesByRun(
+    const mismatches = await reconciliationService.getMismatchesByRun(
       req.params.runId,
     );
-    if (!mismatches)
+    if (!mismatches) {
       return res
         .status(404)
         .json({ error: "run not found", code: "NOT_FOUND" });
+    }
     res.json({ data: mismatches });
   } catch (err) {
     next(err);

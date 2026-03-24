@@ -1,11 +1,9 @@
 import { db } from "../db/index.js";
 import { tenants, apiKeys, webhookEndpoints } from "../db/schema.js";
-import { eq, and, isNull, desc, sql } from "drizzle-orm";
+import { eq, and, isNull, desc, sql, or, gt } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { NotFoundError, ConflictError } from "../errors.js";
-
-// ─── Health ───────────────────────────────────────────────────
 
 export const checkHealth = async () => {
   try {
@@ -26,13 +24,11 @@ export const checkHealth = async () => {
   }
 };
 
-// ─── Tenants ──────────────────────────────────────────────────
-
 export const createTenant = async ({ name, email }) => {
   try {
     const [tenant] = await db
       .insert(tenants)
-      .values({ name, email })
+      .values({ name: name.trim(), email: email.toLowerCase().trim() })
       .returning();
     return tenant;
   } catch (err) {
@@ -44,16 +40,34 @@ export const createTenant = async ({ name, email }) => {
 };
 
 export const listTenants = async ({ limit = 20, offset = 0 } = {}) => {
-  return db
-    .select()
-    .from(tenants)
-    .orderBy(desc(tenants.createdAt))
-    .limit(limit)
-    .offset(offset);
+  const [rows, total] = await Promise.all([
+    db
+      .select()
+      .from(tenants)
+      .where(isNull(tenants.deletedAt))
+      .orderBy(desc(tenants.createdAt))
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql`count(*)` })
+      .from(tenants)
+      .where(isNull(tenants.deletedAt)),
+  ]);
+  const totalCount = Number(total[0].count);
+  return {
+    data: rows,
+    total: totalCount,
+    limit,
+    offset,
+    hasMore: offset + limit < totalCount,
+  };
 };
 
 export const getTenant = async (id) => {
-  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id));
+  const [tenant] = await db
+    .select()
+    .from(tenants)
+    .where(and(eq(tenants.id, id), isNull(tenants.deletedAt)));
   return tenant || null;
 };
 
@@ -61,7 +75,7 @@ export const updateTenant = async (id, fields) => {
   const [tenant] = await db
     .update(tenants)
     .set({ ...fields, updatedAt: new Date() })
-    .where(eq(tenants.id, id))
+    .where(and(eq(tenants.id, id), isNull(tenants.deletedAt)))
     .returning();
   if (!tenant) throw new NotFoundError("tenant");
   return tenant;
@@ -69,22 +83,23 @@ export const updateTenant = async (id, fields) => {
 
 export const deleteTenant = async (id) => {
   const [tenant] = await db
-    .delete(tenants)
-    .where(eq(tenants.id, id))
+    .update(tenants)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(tenants.id, id), isNull(tenants.deletedAt)))
     .returning();
   if (!tenant) throw new NotFoundError("tenant");
   return tenant;
 };
 
-// ─── API Keys ─────────────────────────────────────────────────
-
-export const generateApiKey = async (tenantId) => {
+export const generateApiKey = async (tenantId, expiresInDays = 365) => {
   const rawKey = `pk_live_${crypto.randomBytes(24).toString("hex")}`;
   const keyPrefix = rawKey.slice(0, 14);
   const keyHash = await bcrypt.hash(rawKey, 10);
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + expiresInDays);
   const [apiKey] = await db
     .insert(apiKeys)
-    .values({ tenantId, keyHash, keyPrefix })
+    .values({ tenantId, keyHash, keyPrefix, expiresAt })
     .returning();
   return { ...apiKey, rawKey };
 };
@@ -95,6 +110,7 @@ export const listApiKeys = async (tenantId) => {
       id: apiKeys.id,
       keyPrefix: apiKeys.keyPrefix,
       createdAt: apiKeys.createdAt,
+      expiresAt: apiKeys.expiresAt,
       revokedAt: apiKeys.revokedAt,
     })
     .from(apiKeys)
@@ -112,31 +128,49 @@ export const revokeApiKey = async (tenantId, keyId) => {
 };
 
 export const validateApiKey = async (rawKey) => {
+  // Extract prefix from raw key (first 14 chars)
   const keyPrefix = rawKey.slice(0, 14);
+
+  // Find all keys with matching prefix that are not revoked and not expired
   const candidates = await db
     .select()
     .from(apiKeys)
-    .where(and(eq(apiKeys.keyPrefix, keyPrefix), isNull(apiKeys.revokedAt)));
+    .where(
+      and(
+        eq(apiKeys.keyPrefix, keyPrefix),
+        isNull(apiKeys.revokedAt),
+        or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, new Date())),
+      ),
+    );
+
+  // Compare raw key with each candidate's bcrypt hash
   for (const key of candidates) {
     const match = await bcrypt.compare(rawKey, key.keyHash);
-    if (match) return { tenantId: key.tenantId };
+    if (match) {
+      return { tenantId: key.tenantId };
+    }
   }
+
   return null;
 };
 
-// ─── Webhooks ─────────────────────────────────────────────────
-
 export const addWebhook = async (tenantId, url) => {
+  const secret = crypto.randomBytes(32).toString("hex");
   const [webhook] = await db
     .insert(webhookEndpoints)
-    .values({ tenantId, url })
+    .values({ tenantId, url, secret })
     .returning();
   return webhook;
 };
 
 export const listWebhooks = async (tenantId) => {
   return db
-    .select()
+    .select({
+      id: webhookEndpoints.id,
+      url: webhookEndpoints.url,
+      active: webhookEndpoints.active,
+      createdAt: webhookEndpoints.createdAt,
+    })
     .from(webhookEndpoints)
     .where(eq(webhookEndpoints.tenantId, tenantId))
     .orderBy(desc(webhookEndpoints.createdAt));

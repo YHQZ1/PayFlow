@@ -4,8 +4,8 @@ info:
   description: Webhook delivery service — listens to Kafka events and delivers them to tenant-registered endpoints with retry and dead letter queue
   version: 1.0.0
 servers:
-  - url: http://localhost:3007
-    description: Local development
+  - url: http://localhost:4000
+    description: Via API Gateway
 
 tags:
   - name: Health

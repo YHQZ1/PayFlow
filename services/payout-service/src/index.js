@@ -1,16 +1,32 @@
 import "dotenv/config";
 import app from "./app.js";
 import { startConsumer } from "./kafka/consumer.js";
+import { connectProducer } from "./kafka/producer.js";
 import { logger } from "./logger.js";
+import { db } from "./db/index.js";
+import { redis } from "./redis.js";
+import "./cron/payout.cron.js";
 
 const PORT = process.env.PORT || 3005;
 
 const start = async () => {
   try {
+    await connectProducer();
     await startConsumer();
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info({ port: PORT }, "payout-service started");
     });
+
+    const shutdown = async () => {
+      logger.info("shutting down payout-service");
+      await new Promise((resolve) => server.close(resolve));
+      await redis.quit();
+      await db.$client.end();
+      process.exit(0);
+    };
+
+    process.on("SIGTERM", shutdown);
+    process.on("SIGINT", shutdown);
   } catch (err) {
     logger.error({ err }, "failed to start payout-service");
     process.exit(1);

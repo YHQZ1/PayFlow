@@ -34,8 +34,18 @@ export const createPaymentSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 
+// Add refund validation schema
+export const refundPaymentSchema = z.object({
+  amount: z
+    .number()
+    .int("amount must be an integer (smallest currency unit)")
+    .positive("amount must be greater than 0")
+    .optional(), // If not provided, refund full amount
+  reason: z.string().max(255).optional(),
+});
+
 export const listPaymentsQuerySchema = z.object({
-  status: z.enum(["pending", "succeeded", "failed"]).optional(),
+  status: z.enum(["pending", "succeeded", "failed", "blocked"]).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
 });

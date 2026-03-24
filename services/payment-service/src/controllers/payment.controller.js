@@ -1,5 +1,5 @@
 import * as paymentService from "../services/payment.service.js";
-import { checkIdempotency, saveIdempotency } from "../utils/idempotency.js";
+import { withIdempotency } from "../utils/idempotency.js";
 import { NotFoundError, ValidationError } from "../errors.js";
 import { listPaymentsQuerySchema } from "../middleware/validate.middleware.js";
 
@@ -9,23 +9,49 @@ export const health = async (req, res) => {
 };
 
 export const create = async (req, res, next) => {
+  const idempotencyKey = req.headers["idempotency-key"];
+  if (!idempotencyKey) {
+    return next(new ValidationError("idempotency-key header is required"));
+  }
+
   try {
-    const idempotencyKey = req.headers["idempotency-key"];
-    if (!idempotencyKey) {
-      return next(new ValidationError("idempotency-key header is required"));
-    }
+    const result = await withIdempotency(
+      `${req.tenantId}:${idempotencyKey}`,
+      async () => {
+        return await paymentService.createPayment({
+          tenantId: req.tenantId,
+          idempotencyKey,
+          ...req.body,
+        });
+      },
+    );
+    res.status(result.idempotent ? 200 : 201).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
 
-    const cached = await checkIdempotency(`${req.tenantId}:${idempotencyKey}`);
-    if (cached) return res.status(200).json({ ...cached, idempotent: true });
+// Add refund controller
+export const refund = async (req, res, next) => {
+  const idempotencyKey = req.headers["idempotency-key"];
+  if (!idempotencyKey) {
+    return next(new ValidationError("idempotency-key header is required"));
+  }
 
-    const payment = await paymentService.createPayment({
-      tenantId: req.tenantId,
-      idempotencyKey,
-      ...req.body,
-    });
-
-    await saveIdempotency(`${req.tenantId}:${idempotencyKey}`, payment);
-    res.status(201).json(payment);
+  try {
+    const result = await withIdempotency(
+      `${req.tenantId}:refund:${req.params.id}:${idempotencyKey}`,
+      async () => {
+        return await paymentService.refundPayment({
+          paymentId: req.params.id,
+          tenantId: req.tenantId,
+          idempotencyKey,
+          amount: req.body.amount,
+          reason: req.body.reason,
+        });
+      },
+    );
+    res.status(result.idempotent ? 200 : 201).json(result);
   } catch (err) {
     next(err);
   }

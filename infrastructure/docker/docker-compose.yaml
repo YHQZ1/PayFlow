@@ -14,6 +14,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - payflow-network
 
   redis:
     image: redis:7-alpine
@@ -24,6 +26,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - payflow-network
 
   kafka:
     image: apache/kafka:3.7.0
@@ -46,6 +50,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 10
+    networks:
+      - payflow-network
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -57,6 +63,42 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    networks:
+      - payflow-network
+
+  kong:
+    image: kong:3.6
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yaml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+    volumes:
+      - ./kong.yaml:/etc/kong/kong.yaml:ro
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    networks:
+      - payflow-network
 
 volumes:
   postgres_data:
+
+networks:
+  payflow-network:
+    driver: bridge
