@@ -1,0 +1,23 @@
+{
+  "name": "payflow",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev:tenant": "npm run dev --workspace=services/tenant-service",
+    "dev:payment": "npm run dev --workspace=services/payment-service",
+    "dev:ledger": "npm run dev --workspace=services/ledger-service",
+    "dev:notification": "npm run dev --workspace=services/notification-service",
+    "dev:fraud": "npm run dev --workspace=services/fraud-service",
+    "infra:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
+    "infra:reset": "docker compose -f infrastructure/docker/docker-compose.yml down -v && docker compose -f infrastructure/docker/docker-compose.yml up -d",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
