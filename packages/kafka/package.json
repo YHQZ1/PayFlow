@@ -2,13 +2,14 @@
   "name": "@payflow/kafka",
   "version": "1.0.0",
   "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "scripts": {
     "build": "tsc"
   },
   "dependencies": {
-    "kafkajs": "^2.2.4"
+    "kafkajs": "^2.2.4",
+    "@payflow/shared": "*"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
